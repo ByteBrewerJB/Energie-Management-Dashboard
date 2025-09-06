@@ -16,6 +16,7 @@ python-dotenv
 # Security & Authentication
 passlib[bcrypt]
 python-jose[cryptography]
+python-multipart
 
 # Templating
 Jinja2

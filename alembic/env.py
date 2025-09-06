@@ -42,9 +42,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = os.getenv("DATABASE_URL")
-    if url is None:
-        raise ValueError("DATABASE_URL environment variable is not set.")
+    url = "sqlite:///./joulejournal.db"
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -64,9 +62,12 @@ def run_migrations_online() -> None:
 
     """
     # Get the database URL from the environment variable
-    db_url = os.getenv("DATABASE_URL")
-    if db_url is None:
-        raise ValueError("DATABASE_URL environment variable is not set for online migrations.")
+    db_url = "sqlite:///./joulejournal.db"
+
+    # For SQLite, we need to add a special connect_args argument
+    connect_args = {}
+    if db_url.startswith("sqlite"):
+        connect_args = {"check_same_thread": False}
 
     # Create a configuration dictionary for engine_from_config
     # and set the URL programmatically
@@ -78,6 +79,7 @@ def run_migrations_online() -> None:
         connectable_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     with connectable.connect() as connection:

@@ -1,82 +1,78 @@
-# Energie Management Dashboard
+# JouleJournal - Energie Management Dashboard
 
-Een standalone webapplicatie voor het monitoren, analyseren en rapporteren van energieverbruik, -opwekking, kosten en de financiële Return on Investment (ROI) van een zonnepaneleninstallatie. De applicatie draait volledig lokaal binnen Docker containers.
+Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbruik, -opwekking, kosten en de financiële Return on Investment (ROI) van een zonnepaneleninstallatie.
 
 ## Features
 
-*   **Dashboard met Tijdreeksanalyse:** Analyseer energiegegevens over een selecteerbare periode.
-*   **KPI Overzicht:** Bekijk kerncijfers zoals totale kosten, opbrengsten, en zelfvoorzienendheid.
-*   **ROI Tracker:** Volg de terugverdientijd van uw investering met een duidelijke voortgangsbalk.
-*   **Interactieve Grafieken:**
-    *   **Energiebalans:** Een gestapelde staafgrafiek die Import, Export, Opgewekte energie en Eigen Verbruik toont.
-    *   **Verbruiksuitsplitsing:** Een doughnut chart die het verbruik van het huis versus de elektrische auto's toont.
-*   **Data Invoer via Webformulier:** Voer eenvoudig nieuwe maandelijkse data in via een webformulier.
-*   **Backend API:** Een robuuste FastAPI-backend voor alle berekeningen.
-*   **Volledig Dockerized:** De gehele applicatie (backend, database) wordt beheerd met Docker Compose voor eenvoudige setup en deployment.
+- **Dynamisch Dashboard:** Real-time visualisatie van uw energiegegevens.
+- **KPI Overzicht:** Kerncijfers voor het huidige jaar, inclusief netto kosten en zelfvoorzienendheid.
+- **ROI Tracker:** Visuele voortgangsbalk die de terugverdientijd van uw investering toont.
+- **Interactieve Grafieken (Chart.js):**
+    - **Energiebalans:** Gestapelde staafgrafiek van Import, Export, en Eigen Verbruik.
+    - **Verbruiksuitsplitsing:** Taartdiagram dat verbruik van het huis vs. elektrische auto toont.
+    - **Productie vs. Forecast:** Lijngrafiek die werkelijke productie vergelijkt met de prognose.
+- **Robuuste Backend API:** Gebouwd met FastAPI voor snelle en betrouwbare dataverwerking.
+- **Containerized:** Volledig geconfigureerd om te draaien met Docker voor een eenvoudige en consistente setup.
 
 ## Vereisten
 
-*   [Docker](https://www.docker.com/get-started)
-*   Docker Compose (meestal inbegrepen bij Docker Desktop)
+- [Docker](https://www.docker.com/get-started)
+- Docker Compose V1 (docker-compose) of V2 (docker compose)
 
 ## Installatie en Opstarten
+
+Volg deze stappen om de applicatie lokaal op te zetten en te draaien.
 
 1.  **Clone de Repository**
     ```bash
     git clone <repository_url>
-    cd <repository_directory>
+    cd joulejournal-project
     ```
 
 2.  **Bouw en Start de Applicatie**
-    Gebruik Docker Compose om de images te bouwen en de containers te starten. Dit zal een backend-service en een PostgreSQL database-service opstarten.
+    Dit commando bouwt de Docker-image voor de backend en start alle services (backend en database) die zijn gedefinieerd in `docker-compose.yml`.
     ```bash
-    docker compose up --build -d
+    docker-compose up --build
     ```
-    De `-d` vlag start de containers in de achtergrond (detached mode).
+    *Wacht tot de output aangeeft dat de Uvicorn-server draait.*
 
-3.  **Database Migraties Uitvoeren**
-    Nadat de containers zijn gestart, moet het databaseschema worden aangemaakt. Voer het volgende commando uit om de Alembic-migraties toe te passen:
+3.  **Draai Database Migraties (in een nieuw terminalvenster)**
+    Met de applicatie draaiend, opent u een tweede terminal. Dit commando past de database schema's toe.
     ```bash
-    docker compose exec backend alembic upgrade head
+    docker-compose exec backend alembic upgrade head
     ```
 
-4.  **Initiële Data Importeren**
-    Om de applicatie te vullen met de initiële data uit de CSV-bestanden, voert u het importscript uit:
+4.  **Seed de Database met Startdata (in hetzelfde nieuwe terminalvenster)**
+    Dit script vult de database met initiële data voor investeringen, tarieven en metingen, zodat het dashboard direct bruikbaar is.
     ```bash
-    docker compose exec backend python scripts/import_data.py
+    docker-compose exec backend python scripts/seed_db.py
     ```
-    *Opmerking: Zorg ervoor dat de dummy data in `scripts/data/` is bijgewerkt met uw eigen historische gegevens voordat u dit script uitvoert.*
 
-5.  **Applicatie Benaderen**
-    De applicatie is nu volledig operationeel.
-    *   **Frontend Dashboard:** Open uw browser en ga naar [http://localhost:8000](http://localhost:8000)
-    *   **API Documentatie (Swagger UI):** Ga naar [http://localhost:8000/docs](http://localhost:8000/docs) voor een interactief overzicht van alle API-endpoints.
+5.  **Bekijk de Applicatie**
+    De applicatie is nu volledig ingesteld en draait.
+    - **Frontend Dashboard:** Open uw browser en ga naar [http://localhost:8000](http://localhost:8000)
+    - **API Documentatie (Swagger UI):** Ga naar [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## Projectstructuur
 
 ```
 .
 ├── app/              # Backend FastAPI applicatie
-│   ├── api/          # API endpoints
-│   ├── crud/         # Database operaties
-│   ├── db/           # Database sessie management
-│   ├── models/       # SQLAlchemy datamodellen
-│   └── schemas/      # Pydantic schemas
-├── scripts/          # Hulpscripts (bv. data import)
+├── scripts/          # Hulpscripts (seed_db.py)
 ├── static/           # Statische bestanden (CSS, JS)
 ├── templates/        # HTML templates
 ├── alembic/          # Database migraties
-├── Dockerfile        # Docker-configuratie voor de backend
-└── docker-compose.yml # Docker Compose orkestratie
+├── Dockerfile
+└── docker-compose.yml
 ```
 
 ## Stoppen van de Applicatie
 
-Om de applicatie te stoppen, gebruikt u:
+Om de containers te stoppen, druk op `Ctrl+C` in de terminal waar `docker-compose up` draait, of voer uit:
 ```bash
-docker compose down
+docker-compose down
 ```
-Als u ook de database-volume wilt verwijderen (LET OP: DIT VERWIJDERT ALLE DATA), gebruikt u:
+Om ook de database-volume te verwijderen (LET OP: DIT VERWIJDERT ALLE DATA), gebruikt u:
 ```bash
-docker compose down -v
+docker-compose down -v
 ```

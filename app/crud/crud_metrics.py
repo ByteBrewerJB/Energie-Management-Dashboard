@@ -5,8 +5,13 @@ from app.schemas import metrics as metrics_schema
 def get_metric(db: Session, metric_id: int):
     return db.query(models.MonthlyMetric).filter(models.MonthlyMetric.id == metric_id).first()
 
+from datetime import date
+
 def get_metrics(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.MonthlyMetric).offset(skip).limit(limit).all()
+
+def get_metrics_by_investment(db: Session, investment_id: int, start_date: date):
+    return db.query(models.MonthlyMetric).filter(models.MonthlyMetric.period_start >= start_date).all()
 
 def create_monthly_metric(db: Session, metric: metrics_schema.MonthlyMetricCreate) -> models.MonthlyMetric:
     """

@@ -5,7 +5,7 @@ from app.schemas.roi import ROIStatus, ROIMethodResult
 from app.models.models import Investment, MonthlyMetric, Tariff
 
 def calculate_roi_status(db: Session, investment_id: int) -> ROIStatus:
-    investment = crud_investments.get_investment(db, investment_id)
+    investment = crud_investments.get(db, investment_id)
     if not investment:
         return None
 
@@ -23,7 +23,7 @@ def calculate_roi_status(db: Session, investment_id: int) -> ROIStatus:
         energy_flow = energy_calculations.calculate_energy_flow(metric)
         financials = financial_calculations.calculate_financials(metric, tariff)
         avoided_costs = energy_flow['self_consumption_kwh'] * float(tariff.purchase_high_eur_kwh)
-        revenue = financials['export_revenue_ex_vat']
+        revenue = float(financials['export_revenue_ex_vat'])
         monthly_value_m1 = avoided_costs + revenue
         cumulative_savings_m1 += monthly_value_m1
 

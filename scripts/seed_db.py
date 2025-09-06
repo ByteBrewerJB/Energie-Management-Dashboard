@@ -48,9 +48,9 @@ def seed_db():
         exists = db.query(models.Tariff).filter(models.Tariff.start_date == tariff.start_date).first()
         if not exists:
             crud_tariffs.create_tariff(db, tariff=tariff)
-            print(f"✅ Tariff for {tariff.start_date.date()} seeded.")
+            print(f"✅ Tariff for {tariff.start_date} seeded.")
         else:
-            print(f"ℹ️ Tariff for {tariff.start_date.date()} already exists, skipping.")
+            print(f"ℹ️ Tariff for {tariff.start_date} already exists, skipping.")
 
     # Seed Metrics
     metrics_df = pd.read_csv('scripts/data/metrics.csv', parse_dates=['period'])
@@ -71,9 +71,9 @@ def seed_db():
         exists = db.query(models.MonthlyMetric).filter(models.MonthlyMetric.period_start == metric.period_start).first()
         if not exists:
             crud_metrics.create_monthly_metric(db, metric=metric)
-            print(f"✅ Metric for {metric.period_start.date()} seeded.")
+            print(f"✅ Metric for {metric.period_start} seeded.")
         else:
-            print(f"ℹ️ Metric for {metric.period_start.date()} already exists, skipping.")
+            print(f"ℹ️ Metric for {metric.period_start} already exists, skipping.")
 
     db.close()
     print("\nDatabase seeding check complete! 🌱")

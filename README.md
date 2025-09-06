@@ -19,7 +19,33 @@ Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbr
 - [Docker](https://www.docker.com/get-started)
 - Docker Compose V1 (docker-compose) of V2 (docker compose)
 
-## Installatie en Opstarten
+## Implementatie in Portainer (Aanbevolen)
+
+Voor een eenvoudige en beheerde implementatie kunt u deze applicatie als een "Stack" in Portainer draaien.
+
+1.  **Navigeer naar Stacks:** Log in op uw Portainer-instantie en ga naar "Stacks" in het menu.
+2.  **Voeg een nieuwe Stack toe:** Klik op "Add stack".
+3.  **Configureer de Stack:**
+    *   **Name:** Geef uw stack een naam (bijv. `joulejournal`).
+    *   **Repository:** Selecteer "Repository" als de bouwmethode.
+    *   **Repository URL:** Plak de URL van deze GitHub repository.
+    *   **Compose path:** Zorg ervoor dat het pad is ingesteld op `docker-compose.yml`.
+4.  **Omgevingsvariabelen (Environment Variables):**
+    Voeg de volgende omgevingsvariabelen toe. Deze zijn essentieel voor de databaseverbinding. Klik op "Add environment variable" voor elke variabele.
+    *   `POSTGRES_USER`: De gebruikersnaam voor uw database (bijv. `joule`).
+    *   `POSTGRES_PASSWORD`: Een sterk wachtwoord voor de databasegebruiker.
+    *   `POSTGRES_DB`: De naam van de database (bijv. `joulejournal`).
+5.  **Implementeer de Stack:** Klik op "Deploy the stack" en wacht tot Portainer de images heeft gebouwd en de containers heeft gestart.
+6.  **Database Migraties & Seeding:**
+    *   Nadat de stack is geïmplementeerd, ga naar de "Stack" details en open de console van de `backend`-container.
+    *   Voer de volgende commando's uit in de console om de database op te zetten:
+        ```sh
+        alembic upgrade head
+        python scripts/seed_db.py
+        ```
+7.  **Bekijk de Applicatie:** Uw applicatie is nu beschikbaar op de hostnaam van uw Portainer-server op poort 8000 (bijv. `http://<uw-server-ip>:8000`).
+
+## Lokale Installatie en Opstarten
 
 Volg deze stappen om de applicatie lokaal op te zetten en te draaien.
 
@@ -29,20 +55,28 @@ Volg deze stappen om de applicatie lokaal op te zetten en te draaien.
     cd joulejournal-project
     ```
 
-2.  **Bouw en Start de Applicatie**
+2.  **Maak een `.env` bestand**
+    Maak een bestand met de naam `.env` in de root van het project en voeg de volgende variabelen toe:
+    ```
+    POSTGRES_USER=joule
+    POSTGRES_PASSWORD=eensterkwachtwoord
+    POSTGRES_DB=joulejournal
+    ```
+
+3.  **Bouw en Start de Applicatie**
     Dit commando bouwt de Docker-image voor de backend en start alle services (backend en database) die zijn gedefinieerd in `docker-compose.yml`.
     ```bash
     docker-compose up --build
     ```
     *Wacht tot de output aangeeft dat de Uvicorn-server draait.*
 
-3.  **Draai Database Migraties (in een nieuw terminalvenster)**
+4.  **Draai Database Migraties (in een nieuw terminalvenster)**
     Met de applicatie draaiend, opent u een tweede terminal. Dit commando past de database schema's toe.
     ```bash
     docker-compose exec backend alembic upgrade head
     ```
 
-4.  **Seed de Database met Startdata (in hetzelfde nieuwe terminalvenster)**
+5.  **Seed de Database met Startdata (in hetzelfde nieuwe terminalvenster)**
     Dit script vult de database met initiële data voor investeringen, tarieven en metingen, zodat het dashboard direct bruikbaar is.
     ```bash
     docker-compose exec backend python scripts/seed_db.py

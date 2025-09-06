@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Dict, Any
-from .metrics import MonthlyMetricInDB
+from .metrics import MonthlyMetric
 
 class EnergyFlowResult(BaseModel):
     self_consumption_kwh: float
@@ -21,7 +21,7 @@ class MonthlyAnalysisResult(BaseModel):
     A comprehensive schema for a single month's analysis, combining the
     raw metric data with calculated energy and financial results.
     """
-    metric: MonthlyMetricInDB
+    metric: MonthlyMetric
     energy_flow: EnergyFlowResult
     financials: FinancialResult
 

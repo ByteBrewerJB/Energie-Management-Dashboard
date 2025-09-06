@@ -10,6 +10,8 @@ services:
       - "${PORT:-5201}:${PORT:-5201}"
     environment:
       - PORT=${PORT:-5201}
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     command: >
       bash -lc "

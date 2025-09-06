@@ -16,11 +16,10 @@ def import_investments(db: Session, filepath: str):
     for _, row in df.iterrows():
         investment = Investment(
             description=row['description'],
-            install_date=datetime.strptime(row['install_date'], '%Y-%m-%d').date(),
-            total_investment_cost=row['total_investment_cost'],
-            total_wp=row['total_wp'],
-            estimated_annual_production_kwh=row['estimated_annual_production_kwh'],
-            inverter_type=row['inverter_type']
+            installation_date=datetime.strptime(row['install_date'], '%Y-%m-%d').date(),
+            total_cost_eur=row['total_investment_cost'],
+            total_power_wp=row['total_wp'],
+            estimated_annual_production_kwh=row['estimated_annual_production_kwh']
         )
         db.add(investment)
     print("Investments imported successfully.")
@@ -35,11 +34,11 @@ def import_tariffs(db: Session, filepath: str):
         tariff = Tariff(
             start_date=row['start_date'].date(),
             end_date=end_date,
-            purchase_rate_low=row['purchase_rate_low'],
-            purchase_rate_high=row['purchase_rate_high'],
-            feed_in_rate=row['feed_in_rate'],
+            purchase_low_eur_kwh=row['purchase_rate_low'],
+            purchase_high_eur_kwh=row['purchase_rate_high'],
+            sale_eur_kwh=row['feed_in_rate'],
             vat_percentage=row['vat_percentage'],
-            fixed_roi_rate=row['fixed_roi_rate']
+            fixed_roi_rate_eur_kwh=row['fixed_roi_rate']
         )
         db.add(tariff)
     print("Tariffs imported successfully.")
@@ -49,16 +48,16 @@ def import_metrics(db: Session, filepath: str):
     df = pd.read_csv(filepath, parse_dates=['period'])
     for _, row in df.iterrows():
         metric = MonthlyMetric(
-            period=row['period'].date(),
-            account=row['account'],
-            total_generated_kwh=row['total_generated_kwh'],
-            import_low_rate_kwh=row['import_low_rate_kwh'],
-            import_high_rate_kwh=row['import_high_rate_kwh'],
-            total_feed_in_kwh=row['total_feed_in_kwh'],
-            ev_consumption_kwh=row['ev_consumption_kwh'],
+            period_start=row['period'].date(),
+            account_name=row['account'],
+            production_total_kwh=row['total_generated_kwh'],
+            import_low_kwh=row['import_low_rate_kwh'],
+            import_high_kwh=row['import_high_rate_kwh'],
+            export_total_kwh=row['total_feed_in_kwh'],
+            consumption_ev_kwh=row['ev_consumption_kwh'],
             battery_charge_kwh=row['battery_charge_kwh'],
             battery_discharge_kwh=row['battery_discharge_kwh'],
-            prepayment_amount=row['prepayment_amount']
+            monthly_prepayment_eur=row['prepayment_amount']
         )
         db.add(metric)
     print("Monthly metrics imported successfully.")

@@ -9,3 +9,6 @@ alembic
 
 # Data processing
 pandas
+
+# Environment variables
+python-dotenv

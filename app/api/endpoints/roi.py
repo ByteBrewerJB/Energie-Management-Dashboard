@@ -13,7 +13,19 @@ def get_roi_status(investment_id: int, db: Session = Depends(get_db)):
     """
     Retrieves the ROI status for a specific investment.
 
-    This endpoint now returns the result of Method 1 for ROI calculation.
+    This endpoint returns the result of Method 1 for ROI calculation, which
+    is based on avoided costs and export revenue.
+
+    Args:
+        investment_id: The ID of the investment to analyze.
+        db: The database session dependency.
+
+    Returns:
+        A ROIMethodResult object detailing the ROI status based on Method 1.
+
+    Raises:
+        HTTPException: 404 Not Found if the investment is not found or has
+                       no metrics available for calculation.
     """
     roi_status: ROIStatus | None = roi_calculations.calculate_roi_status(
         db, investment_id

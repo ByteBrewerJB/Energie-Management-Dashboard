@@ -4,7 +4,23 @@ from app.services import energy_calculations, financial_calculations
 from app.schemas.roi import ROIStatus, ROIMethodResult
 from app.models.models import Investment, MonthlyMetric, Tariff
 
+
 def calculate_roi_status(db: Session, investment_id: int) -> ROIStatus:
+    """
+    Calculates the Return on Investment (ROI) status for a given investment.
+
+    This function calculates ROI using two different methods:
+    Method 1: Based on avoided costs and export revenue.
+    Method 2: Based on a fixed rate per kWh produced.
+
+    Args:
+        db: The database session.
+        investment_id: The ID of the investment to calculate the ROI for.
+
+    Returns:
+        An ROIStatus object containing the results of both calculation methods.
+        Returns None if the investment is not found.
+    """
     investment = crud_investments.get(db, investment_id)
     if not investment:
         return None

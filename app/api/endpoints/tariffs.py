@@ -19,6 +19,15 @@ def read_tariffs(
 ) -> Any:
     """
     Retrieve all tariffs.
+
+    Args:
+        db: The database session dependency.
+        skip: The number of records to skip for pagination.
+        limit: The maximum number of records to return.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        A list of Tariff objects.
     """
     tariffs = crud_tariffs.get_multi(db, skip=skip, limit=limit)
     return tariffs
@@ -33,6 +42,14 @@ def create_tariff(
 ) -> Any:
     """
     Create a new tariff.
+
+    Args:
+        db: The database session dependency.
+        tariff_in: The tariff data from the request body.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The newly created Tariff object.
     """
     tariff = crud_tariffs.create(db=db, obj_in=tariff_in)
     return tariff
@@ -46,7 +63,18 @@ def read_tariff(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Get a specific tariff by ID.
+    Get a specific tariff by its ID.
+
+    Args:
+        db: The database session dependency.
+        tariff_id: The ID of the tariff to retrieve.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The requested Tariff object.
+
+    Raises:
+        HTTPException: 404 Not Found if the tariff does not exist.
     """
     tariff = crud_tariffs.get(db, tariff_id=tariff_id)
     if not tariff:
@@ -63,7 +91,19 @@ def update_tariff(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Update a tariff.
+    Update an existing tariff.
+
+    Args:
+        db: The database session dependency.
+        tariff_id: The ID of the tariff to update.
+        tariff_in: The new tariff data from the request body.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The updated Tariff object.
+
+    Raises:
+        HTTPException: 404 Not Found if the tariff does not exist.
     """
     tariff = crud_tariffs.get(db, tariff_id=tariff_id)
     if not tariff:
@@ -82,6 +122,17 @@ def delete_tariff(
 ) -> Any:
     """
     Delete a tariff.
+
+    Args:
+        db: The database session dependency.
+        tariff_id: The ID of the tariff to delete.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The deleted Tariff object.
+
+    Raises:
+        HTTPException: 404 Not Found if the tariff does not exist.
     """
     tariff = crud_tariffs.get(db, tariff_id=tariff_id)
     if not tariff:

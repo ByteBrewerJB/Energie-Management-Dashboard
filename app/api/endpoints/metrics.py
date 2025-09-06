@@ -18,7 +18,16 @@ def read_metrics(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Retrieve all metrics.
+    Retrieve all monthly metrics.
+
+    Args:
+        db: The database session dependency.
+        skip: The number of records to skip for pagination.
+        limit: The maximum number of records to return.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        A list of MonthlyMetric objects.
     """
     metrics = crud_metrics.get_multi(db, skip=skip, limit=limit)
     return metrics
@@ -32,7 +41,15 @@ def create_metric(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Create a new metric.
+    Create a new monthly metric.
+
+    Args:
+        db: The database session dependency.
+        metric_in: The metric data from the request body.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The newly created MonthlyMetric object.
     """
     # Check if a metric for this period already exists to prevent duplicates
     # existing_metric = crud_metrics.get_by_period(db, period=metric_in.period_start)
@@ -50,7 +67,18 @@ def read_metric(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Get a specific metric by ID.
+    Get a specific monthly metric by its ID.
+
+    Args:
+        db: The database session dependency.
+        metric_id: The ID of the metric to retrieve.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The requested MonthlyMetric object.
+
+    Raises:
+        HTTPException: 404 Not Found if the metric does not exist.
     """
     metric = crud_metrics.get(db, metric_id=metric_id)
     if not metric:
@@ -67,7 +95,19 @@ def update_metric(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Update a metric.
+    Update an existing monthly metric.
+
+    Args:
+        db: The database session dependency.
+        metric_id: The ID of the metric to update.
+        metric_in: The new metric data from the request body.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The updated MonthlyMetric object.
+
+    Raises:
+        HTTPException: 404 Not Found if the metric does not exist.
     """
     metric = crud_metrics.get(db, metric_id=metric_id)
     if not metric:
@@ -85,7 +125,18 @@ def delete_metric(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Delete a metric.
+    Delete a monthly metric.
+
+    Args:
+        db: The database session dependency.
+        metric_id: The ID of the metric to delete.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The deleted MonthlyMetric object.
+
+    Raises:
+        HTTPException: 404 Not Found if the metric does not exist.
     """
     metric = crud_metrics.get(db, metric_id=metric_id)
     if not metric:

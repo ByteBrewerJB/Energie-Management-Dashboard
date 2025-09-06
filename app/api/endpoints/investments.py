@@ -18,7 +18,18 @@ def read_investments(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Retrieve all investments. Protected route for admin panel.
+    Retrieve all investments.
+
+    This is a protected endpoint intended for the admin panel.
+
+    Args:
+        db: The database session dependency.
+        skip: The number of records to skip for pagination.
+        limit: The maximum number of records to return.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        A list of Investment objects.
     """
     investments = crud_investments.get_multi(db, skip=skip, limit=limit)
     return investments
@@ -33,6 +44,14 @@ def create_investment(
 ) -> Any:
     """
     Create a new investment.
+
+    Args:
+        db: The database session dependency.
+        investment_in: The investment data from the request body.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The newly created Investment object.
     """
     investment = crud_investments.create(db=db, obj_in=investment_in)
     return investment
@@ -45,7 +64,19 @@ def read_investment(
     investment_id: int,
 ) -> Any:
     """
-    Get a specific investment by ID. This is a public endpoint.
+    Get a specific investment by its ID.
+
+    This is a public endpoint.
+
+    Args:
+        db: The database session dependency.
+        investment_id: The ID of the investment to retrieve.
+
+    Returns:
+        The requested Investment object.
+
+    Raises:
+        HTTPException: 404 Not Found if the investment does not exist.
     """
     investment = crud_investments.get(db, investment_id=investment_id)
     if not investment:
@@ -62,7 +93,19 @@ def update_investment(
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Update an investment.
+    Update an existing investment.
+
+    Args:
+        db: The database session dependency.
+        investment_id: The ID of the investment to update.
+        investment_in: The new investment data from the request body.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The updated Investment object.
+
+    Raises:
+        HTTPException: 404 Not Found if the investment does not exist.
     """
     investment = crud_investments.get(db, investment_id=investment_id)
     if not investment:
@@ -81,6 +124,17 @@ def delete_investment(
 ) -> Any:
     """
     Delete an investment.
+
+    Args:
+        db: The database session dependency.
+        investment_id: The ID of the investment to delete.
+        current_user: The authenticated user dependency.
+
+    Returns:
+        The deleted Investment object.
+
+    Raises:
+        HTTPException: 404 Not Found if the investment does not exist.
     """
     investment = crud_investments.get(db, investment_id=investment_id)
     if not investment:

@@ -2,13 +2,17 @@ from pydantic import BaseModel
 from typing import Dict, Any
 from .metrics import MonthlyMetric
 
+
 class EnergyFlowResult(BaseModel):
+    """Schema for detailed energy flow results."""
     self_consumption_kwh: float
     total_consumption_kwh: float
     home_consumption_kwh: float
     self_sufficiency_ratio: float
 
+
 class FinancialResult(BaseModel):
+    """Schema for detailed financial calculation results."""
     import_costs_ex_vat: float
     export_revenue_ex_vat: float
     net_monthly_result_ex_vat: float

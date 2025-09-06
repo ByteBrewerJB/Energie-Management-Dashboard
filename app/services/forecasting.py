@@ -4,7 +4,22 @@ from app.models.models import MonthlyMetric
 from app.schemas.forecast import ForecastResult, MonthlyAverage, Forecast
 from datetime import date, timedelta
 
+
 def get_production_forecast(db: Session) -> ForecastResult:
+    """
+    Generates a 12-month production forecast based on historical monthly averages.
+
+    This function queries the database for historical monthly production data,
+    calculates the average production for each month, and then uses these
+    averages to forecast production for the next 12 months.
+
+    Args:
+        db: The database session.
+
+    Returns:
+        A ForecastResult object containing both the historical monthly averages
+        and the 12-month forecast.
+    """
     # Calculate historical monthly averages
     monthly_averages_query = db.query(
         func.extract('month', MonthlyMetric.period_start).label('month'),

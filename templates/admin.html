@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JouleJournal - Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>JouleJournal Admin</h1>
+        <nav>
+            <a href="/">Home Dashboard</a>
+            <button id="logout-button">Logout</button>
+        </nav>
+    </header>
+
+    <main>
+        <div class="tabs">
+            <button class="tab-link active" data-tab="investments">Investments</button>
+            <button class="tab-link" data-tab="tariffs">Tariffs</button>
+            <button class="tab-link" data-tab="metrics">Monthly Metrics</button>
+        </div>
+
+        <div id="investments" class="tab-content active">
+            <h2>Manage Investments</h2>
+            <button class="add-new-btn" data-model="investment">Add New Investment</button>
+            <div id="investments-table-container"></div>
+        </div>
+
+        <div id="tariffs" class="tab-content">
+            <h2>Manage Tariffs</h2>
+            <button class="add-new-btn" data-model="tariff">Add New Tariff</button>
+            <div id="tariffs-table-container"></div>
+        </div>
+
+        <div id="metrics" class="tab-content">
+            <h2>Manage Monthly Metrics</h2>
+            <button class="add-new-btn" data-model="metric">Add New Metric</button>
+            <div id="metrics-table-container"></div>
+        </div>
+    </main>
+
+    <!-- Modal for Add/Edit Forms -->
+    <div id="form-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3 id="modal-title"></h3>
+            <form id="modal-form"></form>
+        </div>
+    </div>
+
+    <footer>
+        <p>JouleJournal Admin Panel</p>
+    </footer>
+
+    <script src="/static/js/admin.js"></script>
+</body>
+</html>

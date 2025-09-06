@@ -1,66 +1,95 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Any
 
 from app.db.session import get_db
-from app.schemas.metrics import MonthlyMetricCreate, MonthlyMetricInDB
+from app.api import deps
+from app.schemas.metrics import MonthlyMetric, MonthlyMetricCreate, MonthlyMetricUpdate
 from app.crud import crud_metrics
+from app.models import models
 
 router = APIRouter()
 
-@router.post("/metrics", response_model=MonthlyMetricInDB)
-def create_new_metric(
-    *,
-    db: Session = Depends(get_db),
-    metric_in: MonthlyMetricCreate
-):
-    """
-    Create a new monthly metric record.
-    """
-    metric = crud_metrics.create_monthly_metric(db=db, metric=metric_in)
-    return metric
-
-@router.get("/metrics", response_model=List[MonthlyMetricInDB])
+@router.get("/metrics", response_model=List[MonthlyMetric])
 def read_metrics(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-):
-    metrics = crud_metrics.get_metrics(db, skip=skip, limit=limit)
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Retrieve all metrics.
+    """
+    metrics = crud_metrics.get_multi(db, skip=skip, limit=limit)
     return metrics
 
-@router.get("/metrics/{metric_id}", response_model=MonthlyMetricInDB)
+
+@router.post("/metrics", response_model=MonthlyMetric, status_code=status.HTTP_201_CREATED)
+def create_metric(
+    *,
+    db: Session = Depends(get_db),
+    metric_in: MonthlyMetricCreate,
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Create a new metric.
+    """
+    # Check if a metric for this period already exists to prevent duplicates
+    # existing_metric = crud_metrics.get_by_period(db, period=metric_in.period_start)
+    # if existing_metric:
+    #     raise HTTPException(status_code=400, detail="A metric for this period already exists.")
+    metric = crud_metrics.create(db=db, obj_in=metric_in)
+    return metric
+
+
+@router.get("/metrics/{metric_id}", response_model=MonthlyMetric)
 def read_metric(
     *,
     db: Session = Depends(get_db),
     metric_id: int,
-):
-    metric = crud_metrics.get_metric(db, metric_id=metric_id)
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get a specific metric by ID.
+    """
+    metric = crud_metrics.get(db, metric_id=metric_id)
     if not metric:
         raise HTTPException(status_code=404, detail="Metric not found")
     return metric
 
-@router.put("/metrics/{metric_id}", response_model=MonthlyMetricInDB)
+
+@router.put("/metrics/{metric_id}", response_model=MonthlyMetric)
 def update_metric(
     *,
     db: Session = Depends(get_db),
     metric_id: int,
-    metric_in: MonthlyMetricCreate,
-):
-    metric = crud_metrics.get_metric(db, metric_id=metric_id)
+    metric_in: MonthlyMetricUpdate,
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Update a metric.
+    """
+    metric = crud_metrics.get(db, metric_id=metric_id)
     if not metric:
         raise HTTPException(status_code=404, detail="Metric not found")
-    metric = crud_metrics.update_metric(db=db, metric_id=metric_id, metric=metric_in)
+
+    metric = crud_metrics.update(db=db, db_obj=metric, obj_in=metric_in)
     return metric
 
-@router.delete("/metrics/{metric_id}", response_model=MonthlyMetricInDB)
+
+@router.delete("/metrics/{metric_id}", response_model=MonthlyMetric)
 def delete_metric(
     *,
     db: Session = Depends(get_db),
     metric_id: int,
-):
-    metric = crud_metrics.get_metric(db, metric_id=metric_id)
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Delete a metric.
+    """
+    metric = crud_metrics.get(db, metric_id=metric_id)
     if not metric:
         raise HTTPException(status_code=404, detail="Metric not found")
-    metric = crud_metrics.delete_metric(db=db, metric_id=metric_id)
+
+    metric = crud_metrics.remove(db=db, metric_id=metric_id)
     return metric

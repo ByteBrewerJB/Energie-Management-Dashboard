@@ -16,8 +16,8 @@ services:
         set -euxo pipefail
         echo '--- Running database migrations ---'
         alembic upgrade head
-        echo '--- Seeding database ---'
-        python scripts/seed_db.py
+        echo '--- Database migrations complete ---'
+        echo '--- NOTE: Database seeding is now handled manually via the admin interface. ---'
         echo '--- Starting web server ---'
         uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-5201}
       "

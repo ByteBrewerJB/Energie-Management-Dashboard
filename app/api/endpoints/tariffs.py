@@ -1,63 +1,91 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Any
 
 from app.db.session import get_db
-from app.schemas import tariff as tariff_schema
+from app.api import deps
+from app.schemas.tariff import Tariff, TariffCreate, TariffUpdate
 from app.crud import crud_tariffs
+from app.models import models
 
 router = APIRouter()
 
-@router.post("/tariffs", response_model=tariff_schema.TariffInDB)
-def create_tariff(
-    *,
-    db: Session = Depends(get_db),
-    tariff_in: tariff_schema.TariffCreate
-):
-    tariff = crud_tariffs.create_tariff(db=db, tariff=tariff_in)
-    return tariff
-
-@router.get("/tariffs", response_model=List[tariff_schema.TariffInDB])
+@router.get("/tariffs", response_model=List[Tariff])
 def read_tariffs(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-):
-    tariffs = crud_tariffs.get_tariffs(db, skip=skip, limit=limit)
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Retrieve all tariffs.
+    """
+    tariffs = crud_tariffs.get_multi(db, skip=skip, limit=limit)
     return tariffs
 
-@router.get("/tariffs/{tariff_id}", response_model=tariff_schema.TariffInDB)
+
+@router.post("/tariffs", response_model=Tariff, status_code=status.HTTP_201_CREATED)
+def create_tariff(
+    *,
+    db: Session = Depends(get_db),
+    tariff_in: TariffCreate,
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Create a new tariff.
+    """
+    tariff = crud_tariffs.create(db=db, obj_in=tariff_in)
+    return tariff
+
+
+@router.get("/tariffs/{tariff_id}", response_model=Tariff)
 def read_tariff(
     *,
     db: Session = Depends(get_db),
     tariff_id: int,
-):
-    tariff = crud_tariffs.get_tariff(db, tariff_id=tariff_id)
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get a specific tariff by ID.
+    """
+    tariff = crud_tariffs.get(db, tariff_id=tariff_id)
     if not tariff:
         raise HTTPException(status_code=404, detail="Tariff not found")
     return tariff
 
-@router.put("/tariffs/{tariff_id}", response_model=tariff_schema.TariffInDB)
+
+@router.put("/tariffs/{tariff_id}", response_model=Tariff)
 def update_tariff(
     *,
     db: Session = Depends(get_db),
     tariff_id: int,
-    tariff_in: tariff_schema.TariffCreate,
-):
-    tariff = crud_tariffs.get_tariff(db, tariff_id=tariff_id)
+    tariff_in: TariffUpdate,
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Update a tariff.
+    """
+    tariff = crud_tariffs.get(db, tariff_id=tariff_id)
     if not tariff:
         raise HTTPException(status_code=404, detail="Tariff not found")
-    tariff = crud_tariffs.update_tariff(db=db, tariff_id=tariff_id, tariff=tariff_in)
+
+    tariff = crud_tariffs.update(db=db, db_obj=tariff, obj_in=tariff_in)
     return tariff
 
-@router.delete("/tariffs/{tariff_id}", response_model=tariff_schema.TariffInDB)
+
+@router.delete("/tariffs/{tariff_id}", response_model=Tariff)
 def delete_tariff(
     *,
     db: Session = Depends(get_db),
     tariff_id: int,
-):
-    tariff = crud_tariffs.get_tariff(db, tariff_id=tariff_id)
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Delete a tariff.
+    """
+    tariff = crud_tariffs.get(db, tariff_id=tariff_id)
     if not tariff:
         raise HTTPException(status_code=404, detail="Tariff not found")
-    tariff = crud_tariffs.delete_tariff(db=db, tariff_id=tariff_id)
+
+    tariff = crud_tariffs.remove(db=db, tariff_id=tariff_id)
     return tariff

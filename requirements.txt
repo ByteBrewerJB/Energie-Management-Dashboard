@@ -12,3 +12,6 @@ pandas
 
 # Environment variables
 python-dotenv
+
+# Templating
+Jinja2

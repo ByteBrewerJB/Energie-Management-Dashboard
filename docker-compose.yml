@@ -13,8 +13,13 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     command: >
       bash -c "
-        alembic upgrade head &&
-        python scripts/seed_db.py &&
+        set -e
+        set -x
+        echo '--- Running database migrations ---'
+        alembic upgrade head
+        echo '--- Seeding database ---'
+        python scripts/seed_db.py
+        echo '--- Starting web server ---'
         uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
       "
     depends_on:

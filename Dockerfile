@@ -26,4 +26,5 @@ EXPOSE ${PORT}
 
 # Command to run the application
 # The host 0.0.0.0 makes it accessible from outside the container
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "${PORT}"]
+# Use shell form to correctly expand the PORT variable
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}

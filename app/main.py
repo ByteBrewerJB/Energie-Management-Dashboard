@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api.endpoints import analysis, metrics, investments, tariffs
+from app.api.endpoints import analysis, metrics, investments, tariffs, roi, forecast
 
 app = FastAPI(
     title="JouleJournal",
@@ -21,6 +21,8 @@ app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
 app.include_router(metrics.router, prefix="/api", tags=["Metrics"])
 app.include_router(investments.router, prefix="/api", tags=["Investments"])
 app.include_router(tariffs.router, prefix="/api", tags=["Tariffs"])
+app.include_router(roi.router, prefix="/api", tags=["ROI"])
+app.include_router(forecast.router, prefix="/api", tags=["Forecast"])
 
 
 @app.get("/", tags=["Root"])

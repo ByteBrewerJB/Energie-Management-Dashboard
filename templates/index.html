@@ -3,54 +3,340 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JouleJournal - Energie Dashboard</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>JouleJournal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .input-blue {
+            border-color: #3b82f6;
+        }
+        [readonly] {
+            background-color: #f3f4f6;
+        }
+    </style>
 </head>
-<body>
-    <header>
-        <h1>JouleJournal</h1>
-        <p>Een dashboard voor het monitoren van uw energieverbruik en -productie.</p>
-        <div class="theme-switch-wrapper">
-            <label class="theme-switch" for="checkbox">
-                <input type="checkbox" id="checkbox" />
-                <div class="slider round"></div>
-            </label>
-        </div>
-    </header>
+<body class="bg-gray-100 text-gray-800">
 
-    <main>
-        <section id="kpi-container">
-            <h2>Kerncijfers (Huidig Jaar)</h2>
-            <div id="kpis" class="kpi-grid">
-                <!-- KPI data wordt hier geladen door JavaScript -->
-            </div>
-        </section>
+    <div class="container mx-auto p-8">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">JouleJournal</h1>
+            <p class="text-lg text-gray-600">Jouw dashboard voor energie- en zonne-data</p>
+        </header>
 
-        <section id="roi-tracker-container">
-            <h2>Return on Investment (ROI) Tracker</h2>
-            <div id="roi-tracker">
-                <!-- ROI voortgangsbalk wordt hier geladen -->
-            </div>
-        </section>
+        <main class="space-y-12">
+            <!-- Maandoverzicht -->
+            <section id="monthly-overview">
+                <h2 class="text-2xl font-semibold mb-4">Maandoverzicht</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <!-- Filters -->
+                    <div class="mb-4">
+                        <label for="year-filter" class="block text-sm font-medium text-gray-700">Filter op Jaar:</label>
+                        <select id="year-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <!-- Jaren worden dynamisch geladen -->
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maand</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Productie (kWh)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teruglever. (kWh)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Eigen Verbruik (kWh)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Huis (kWh)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EV (kWh)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EV Kosten (€)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PV Opbrengst (€)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorschot (€)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthly-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Rijen worden dynamisch geladen -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
 
-        <div class="chart-grid">
-            <div class="chart-container">
-                <canvas id="energyBalanceChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <canvas id="consumptionSplitChart"></canvas>
-            </div>
-            <div class="chart-container full-width">
-                <canvas id="productionForecastChart"></canvas>
-            </div>
-        </div>
-    </main>
+            <!-- Investeringen -->
+            <section id="investments">
+                <h2 class="text-2xl font-semibold mb-4">Zonnepaneel Investeringen</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                             <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leverancier</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Panelen</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaalprijs (€)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Besparing J1 (€)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terugverdientijd (j)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="investments-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Rijen worden dynamisch geladen -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+             <!-- Maand Toevoegen/Bewerken -->
+            <section id="monthly-form-section">
+                <h2 class="text-2xl font-semibold mb-4">Maanddata Toevoegen/Bewerken</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                     <form id="monthly-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <input type="hidden" id="form-id">
+                        <div>
+                            <label for="year" class="block text-sm font-medium text-gray-700">Jaar</label>
+                            <input type="number" id="year" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+                        </div>
+                        <div>
+                            <label for="month" class="block text-sm font-medium text-gray-700">Maand (1-12)</label>
+                            <input type="number" id="month" min="1" max="12" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div class="col-span-1 md:col-span-2 lg:col-span-3">
+                            <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Tarieven</h3>
+                        </div>
+                        <div>
+                            <label for="low_tariff_eur_per_kwh" class="block text-sm font-medium text-gray-700">Daltarief (€/kWh)</label>
+                            <input type="number" step="0.00001" id="low_tariff_eur_per_kwh" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="high_tariff_eur_per_kwh" class="block text-sm font-medium text-gray-700">Piektafief (€/kWh)</label>
+                            <input type="number" step="0.00001" id="high_tariff_eur_per_kwh" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="feedin_rate_eur_per_kwh" class="block text-sm font-medium text-gray-700">Teruglevertarief (€/kWh)</label>
+                            <input type="number" step="0.00001" id="feedin_rate_eur_per_kwh" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
 
-    <footer>
-        <p>JouleJournal Dashboard v1.0 | <a href="/admin" class="admin-button">Admin Portal</a></p>
-    </footer>
+                         <div class="col-span-1 md:col-span-2 lg:col-span-3">
+                            <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Verbruik</h3>
+                        </div>
+                        <div>
+                            <label for="pv_production_kwh" class="block text-sm font-medium text-gray-700">PV Productie (kWh)</label>
+                            <input type="number" step="0.01" id="pv_production_kwh" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="pv_backfeed_kwh" class="block text-sm font-medium text-gray-700">PV Teruglevering (kWh)</label>
+                            <input type="number" step="0.01" id="pv_backfeed_kwh" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="house_low_kwh" class="block text-sm font-medium text-gray-700">Huis Dal (kWh)</label>
+                            <input type="number" step="0.01" id="house_low_kwh" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="house_high_kwh" class="block text-sm font-medium text-gray-700">Huis Piek (kWh)</label>
+                            <input type="number" step="0.01" id="house_high_kwh" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
+                         <div>
+                            <label for="ev_kwh" class="block text-sm font-medium text-gray-700">Auto (kWh)</label>
+                            <input type="number" step="0.01" id="ev_kwh" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="auto_eur" class="block text-sm font-medium text-gray-700">Auto Kosten (€)</label>
+                            <input type="number" step="0.01" id="auto_eur" class="mt-1 block w-full input-blue rounded-md border-gray-300 shadow-sm">
+                        </div>
 
-    <script src="/static/js/app.js"></script>
+                        <div class="col-span-1 md:col-span-2 lg:col-span-3">
+                            <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Berekende Velden</h3>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Eigen Verbruik (kWh)</label>
+                            <input type="text" id="calc_pv_self_consumption_kwh" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">PV Opbrengst (€)</label>
+                            <input type="text" id="calc_pv_revenue_eur" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" readonly>
+                        </div>
+
+                        <div class="col-span-full mt-4">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Opslaan</button>
+                            <button type="button" id="clear-form-btn" class="ml-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">Nieuw Record</button>
+                        </div>
+                     </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const API_BASE_URL = '/api';
+            const monthlyTableBody = document.getElementById('monthly-table-body');
+            const investmentsTableBody = document.getElementById('investments-table-body');
+            const yearFilter = document.getElementById('year-filter');
+
+            const monthlyForm = document.getElementById('monthly-form');
+            const formId = document.getElementById('form-id');
+
+            // --- Data Fetching and Rendering ---
+            async function fetchData() {
+                try {
+                    const [monthlyRes, investmentsRes] = await Promise.all([
+                        fetch(`${API_BASE_URL}/monthly-energy/`),
+                        fetch(`${API_BASE_URL}/solar-investments/`)
+                    ]);
+                    const monthlyData = await monthlyRes.json();
+                    const investmentsData = await investmentsRes.json();
+
+                    window.allMonthlyData = monthlyData; // Store for filtering
+
+                    populateYearFilter(monthlyData);
+                    renderMonthlyTable(monthlyData);
+                    renderInvestmentsTable(investmentsData);
+
+                } catch (error) {
+                    console.error('Failed to fetch data:', error);
+                }
+            }
+
+            function populateYearFilter(data) {
+                const years = [...new Set(data.map(d => d.year))].sort((a, b) => b - a);
+                yearFilter.innerHTML = '<option value="">Alle Jaren</option>';
+                years.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    yearFilter.appendChild(option);
+                });
+            }
+
+            function renderMonthlyTable(data) {
+                monthlyTableBody.innerHTML = '';
+                data.forEach(record => {
+                    const row = document.createElement('tr');
+                    row.className = 'cursor-pointer hover:bg-gray-100';
+                    row.dataset.id = record.id;
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${record.month_name} ${record.year}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.pv_production_kwh?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.pv_backfeed_kwh?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.pv_self_consumption_kwh?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.house_kwh_total?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.ev_kwh?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${parseFloat(record.auto_eur)?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${parseFloat(record.pv_revenue_eur)?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${parseFloat(record.advance_payment_eur)?.toFixed(2) || '0.00'}</td>
+                    `;
+                    row.addEventListener('click', () => populateFormForEdit(record.id));
+                    monthlyTableBody.appendChild(row);
+                });
+            }
+
+            function renderInvestmentsTable(data) {
+                investmentsTableBody.innerHTML = '';
+                 data.forEach(record => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${record.supplier}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.panels}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${record.panel_type || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${parseFloat(record.total_cost_eur)?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${parseFloat(record.savings_first_year_eur)?.toFixed(2) || '0.00'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${parseFloat(record.payback_years)?.toFixed(2) || '-'}</td>
+                    `;
+                    investmentsTableBody.appendChild(row);
+                });
+            }
+
+            // --- Form Handling ---
+            async function populateFormForEdit(id) {
+                const record = window.allMonthlyData.find(d => d.id === id);
+                if (!record) return;
+
+                formId.value = record.id;
+                document.getElementById('year').value = record.year;
+                document.getElementById('month').value = record.month;
+                // Populate all other fields from the record...
+                document.getElementById('low_tariff_eur_per_kwh').value = record.low_tariff_eur_per_kwh;
+                document.getElementById('high_tariff_eur_per_kwh').value = record.high_tariff_eur_per_kwh;
+                document.getElementById('feedin_rate_eur_per_kwh').value = record.feedin_rate_eur_per_kwh;
+                document.getElementById('pv_production_kwh').value = record.pv_production_kwh;
+                document.getElementById('pv_backfeed_kwh').value = record.pv_backfeed_kwh;
+                document.getElementById('house_low_kwh').value = record.house_low_kwh;
+                document.getElementById('house_high_kwh').value = record.house_high_kwh;
+                document.getElementById('ev_kwh').value = record.ev_kwh;
+                document.getElementById('auto_eur').value = record.auto_eur;
+
+                updateCalculatedFields();
+                window.scrollTo({ top: document.getElementById('monthly-form-section').offsetTop, behavior: 'smooth' });
+            }
+
+            function clearForm() {
+                monthlyForm.reset();
+                formId.value = '';
+                updateCalculatedFields();
+            }
+
+            monthlyForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const id = formId.value;
+                const formData = new FormData(monthlyForm);
+                const data = {
+                    year: parseInt(document.getElementById('year').value),
+                    month: parseInt(document.getElementById('month').value),
+                    low_tariff_eur_per_kwh: parseFloat(document.getElementById('low_tariff_eur_per_kwh').value) || 0,
+                    high_tariff_eur_per_kwh: parseFloat(document.getElementById('high_tariff_eur_per_kwh').value) || 0,
+                    feedin_rate_eur_per_kwh: parseFloat(document.getElementById('feedin_rate_eur_per_kwh').value) || 0,
+                    pv_production_kwh: parseFloat(document.getElementById('pv_production_kwh').value) || 0,
+                    pv_backfeed_kwh: parseFloat(document.getElementById('pv_backfeed_kwh').value) || 0,
+                    house_low_kwh: parseFloat(document.getElementById('house_low_kwh').value) || 0,
+                    house_high_kwh: parseFloat(document.getElementById('house_high_kwh').value) || 0,
+                    ev_kwh: parseFloat(document.getElementById('ev_kwh').value) || 0,
+                    auto_eur: parseFloat(document.getElementById('auto_eur').value) || 0,
+                };
+
+                const url = id ? `${API_BASE_URL}/monthly-energy/${id}` : `${API_BASE_URL}/monthly-energy`;
+                const method = id ? 'PUT' : 'POST';
+
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (!response.ok) throw new Error('Failed to save data');
+
+                    clearForm();
+                    fetchData(); // Refresh data
+                } catch (error) {
+                    console.error('Save error:', error);
+                    alert('Could not save data. See console for details.');
+                }
+            });
+
+            document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+
+            // --- Live Calculations ---
+            function updateCalculatedFields() {
+                const pvProd = parseFloat(document.getElementById('pv_production_kwh').value) || 0;
+                const pvBackfeed = parseFloat(document.getElementById('pv_backfeed_kwh').value) || 0;
+                const feedinRate = parseFloat(document.getElementById('feedin_rate_eur_per_kwh').value) || 0;
+
+                const selfConsumption = Math.max(0, pvProd - pvBackfeed);
+                const pvRevenue = pvBackfeed * feedinRate;
+
+                document.getElementById('calc_pv_self_consumption_kwh').value = selfConsumption.toFixed(2);
+                document.getElementById('calc_pv_revenue_eur').value = pvRevenue.toFixed(2);
+            }
+
+            monthlyForm.addEventListener('input', updateCalculatedFields);
+
+            // --- Filtering ---
+            yearFilter.addEventListener('change', function() {
+                const selectedYear = this.value;
+                if (selectedYear) {
+                    const filteredData = window.allMonthlyData.filter(d => d.year == selectedYear);
+                    renderMonthlyTable(filteredData);
+                } else {
+                    renderMonthlyTable(window.allMonthlyData);
+                }
+            });
+
+            // --- Initial Load ---
+            fetchData();
+        });
+    </script>
 </body>
 </html>

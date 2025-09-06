@@ -6,6 +6,29 @@ let consumptionSplitChartInstance = null;
 let productionForecastChartInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    const themeSwitch = document.getElementById('checkbox');
+    if (themeSwitch) {
+        const currentTheme = localStorage.getItem('theme');
+
+        if (currentTheme) {
+            document.body.classList.add(currentTheme);
+
+            if (currentTheme === 'dark-mode') {
+                themeSwitch.checked = true;
+            }
+        }
+
+        themeSwitch.addEventListener('change', function(event) {
+            if (event.target.checked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.removeItem('theme'); // Remove theme to default to light
+            }
+        });
+    }
+
     console.log('JouleJournal Dashboard Initialized.');
     loadAllData();
 });

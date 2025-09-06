@@ -13,9 +13,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire application source code into the container
 COPY . /app
 
+# Set an argument for the port with a default value
+ARG PORT=5201
+# Set the environment variable for the port
+ENV PORT=${PORT}
+
 # Expose the port the app will run on
-EXPOSE 8000
+EXPOSE ${PORT}
 
 # Command to run the application
 # The host 0.0.0.0 makes it accessible from outside the container
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "${PORT}"]

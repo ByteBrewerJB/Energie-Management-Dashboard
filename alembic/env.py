@@ -42,7 +42,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = "sqlite:///./joulejournal.db"
+    url = os.getenv("DATABASE_URL", "sqlite:///./joulejournal.db")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -62,7 +62,7 @@ def run_migrations_online() -> None:
 
     """
     # Get the database URL from the environment variable
-    db_url = "sqlite:///./joulejournal.db"
+    db_url = os.getenv("DATABASE_URL", "sqlite:///./joulejournal.db")
 
     # For SQLite, we need to add a special connect_args argument
     connect_args = {}

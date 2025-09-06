@@ -13,5 +13,9 @@ pandas
 # Environment variables
 python-dotenv
 
+# Security & Authentication
+passlib[bcrypt]
+python-jose[cryptography]
+
 # Templating
 Jinja2

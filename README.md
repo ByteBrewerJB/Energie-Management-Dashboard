@@ -5,6 +5,7 @@ Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbr
 ## Features
 
 - **Dynamisch Dashboard:** Real-time visualisatie van uw energiegegevens.
+- **Admin Panel:** Een beveiligd admin-paneel (/admin) voor het handmatig beheren van alle data (Investments, Tariffs, en Monthly Metrics).
 - **KPI Overzicht:** Kerncijfers voor het huidige jaar, inclusief netto kosten en zelfvoorzienendheid.
 - **ROI Tracker:** Visuele voortgangsbalk die de terugverdientijd van uw investering toont.
 - **Interactieve Grafieken (Chart.js):**
@@ -19,65 +20,62 @@ Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbr
 - [Docker](https://www.docker.com/get-started)
 - Docker Compose V1 (docker-compose) of V2 (docker compose)
 
-## Implementatie in Portainer (Aanbevolen)
+## Implementatie en Setup
 
-Voor een eenvoudige en beheerde implementatie kunt u deze applicatie als een "Stack" in Portainer draaien.
+Volg deze stappen om de applicatie lokaal of in Portainer op te zetten.
 
-1.  **Navigeer naar Stacks:** Log in op uw Portainer-instantie en ga naar "Stacks" in het menu.
-2.  **Voeg een nieuwe Stack toe:** Klik op "Add stack".
-3.  **Configureer de Stack:**
-    *   **Name:** Geef uw stack een naam (bijv. `joulejournal`).
-    *   **Repository:** Selecteer "Repository" als de bouwmethode.
-    *   **Repository URL:** Plak de URL van deze GitHub repository.
-    *   **Compose path:** Zorg ervoor dat het pad is ingesteld op `docker-compose.yml`.
-4.  **Omgevingsvariabelen (Environment Variables):**
-    Voeg de volgende omgevingsvariabelen toe. Deze zijn essentieel voor de databaseverbinding. Klik op "Add environment variable" voor elke variabele.
-    *   `POSTGRES_USER`: De gebruikersnaam voor uw database (bijv. `joule`).
-    *   `POSTGRES_PASSWORD`: Een sterk wachtwoord voor de databasegebruiker.
-    *   `POSTGRES_DB`: De naam van de database (bijv. `joulejournal`).
-5.  **Implementeer de Stack:** Klik op "Deploy the stack" en wacht tot Portainer de images heeft gebouwd en de containers heeft gestart.
-6.  **Database Setup:** De database migraties en het seeden van de data gebeurt nu automatisch wanneer de `backend` container start.
-7.  **Bekijk de Applicatie:** Uw applicatie is nu beschikbaar op de hostnaam van uw Portainer-server op poort 8000 (bijv. `http://<uw-server-ip>:8000`).
-
-## Lokale Installatie en Opstarten
-
-Volg deze stappen om de applicatie lokaal op te zetten en te draaien.
-
-1.  **Clone de Repository**
+1.  **Clone de Repository** (indien lokaal)
     ```bash
     git clone <repository_url>
     cd joulejournal-project
     ```
 
-2.  **Maak een `.env` bestand**
-    Maak een bestand met de naam `.env` in de root van het project en voeg de volgende variabelen toe:
+2.  **Configureer Omgevingsvariabelen**
+    Maak een `.env` bestand in de root van het project (voor lokale setup) of voeg de variabelen toe in Portainer.
+
+    **Database Variabelen (verplicht):**
     ```
     POSTGRES_USER=joule
     POSTGRES_PASSWORD=eensterkwachtwoord
     POSTGRES_DB=joulejournal
     ```
 
-3.  **Bouw en Start de Applicatie**
-    Dit commando bouwt de Docker-image voor de backend en start alle services (backend en database) die zijn gedefinieerd in `docker-compose.yml`.
-    ```bash
-    docker-compose up --build
+    **Admin Login Variabelen (verplicht):**
+    Deze credentials worden gebruikt om in te loggen op het `/admin` paneel.
     ```
-    *Wacht tot de output aangeeft dat de Uvicorn-server draait.*
+    ADMIN_USER=admin
+    ADMIN_PASSWORD=joulejournal_admin_pass
+    ```
+
+    **Beveiligingssleutel (optioneel maar aanbevolen):**
+    Wordt gebruikt voor het ondertekenen van authenticatie tokens. Als deze niet wordt opgegeven, wordt een standaardwaarde gebruikt.
+    ```
+    # Genereer een sterke, willekeurige string, bijvoorbeeld met: openssl rand -hex 32
+    SECRET_KEY=uw_zeer_geheime_sleutel
+    ```
+
+3.  **Bouw en Start de Applicatie**
+    - **Lokaal:** Voer `docker-compose up --build` uit in de projectmap.
+    - **Portainer:** Maak een nieuwe "Stack", verbind deze met uw Git repository en stel het `docker-compose.yml` pad in. Wijs de omgevingsvariabelen toe en klik op "Deploy the stack".
 
 4.  **Database Setup**
-    De database migraties en het seeden van de data gebeurt nu automatisch wanneer de `backend` container start. U hoeft geen aparte commando's meer uit te voeren.
+    De database migraties worden automatisch uitgevoerd wanneer de `backend` container start. **Het seeden van data gebeurt niet meer automatisch.**
 
-5.  **Bekijk de Applicatie**
-    Zodra de backend draait, is de applicatie volledig ingesteld.
-    - **Frontend Dashboard:** Open uw browser en ga naar [http://localhost:8000](http://localhost:8000)
-    - **API Documentatie (Swagger UI):** Ga naar [http://localhost:8000/docs](http://localhost:8000/docs)
+5.  **Data Invoeren**
+    - Ga naar `http://<uw-server-ip>:8000/admin`.
+    - Log in met de `ADMIN_USER` en `ADMIN_PASSWORD` die u heeft ingesteld.
+    - Voer hier uw data in voor Investeringen, Tarieven en Maandelijkse Cijfers. Zonder data zal het dashboard leeg zijn.
+
+6.  **Bekijk de Applicatie**
+    - **Frontend Dashboard:** [http://localhost:8000](http://localhost:8000)
+    - **Admin Paneel:** [http://localhost:8000/admin](http://localhost:8000/admin)
+    - **API Documentatie (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## Projectstructuur
 
 ```
 .
 ├── app/              # Backend FastAPI applicatie
-├── scripts/          # Hulpscripts (seed_db.py)
 ├── static/           # Statische bestanden (CSS, JS)
 ├── templates/        # HTML templates
 ├── alembic/          # Database migraties

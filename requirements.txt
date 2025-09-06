@@ -1,0 +1,11 @@
+# FastAPI and server
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+psycopg2-binary
+alembic
+
+# Data processing
+pandas

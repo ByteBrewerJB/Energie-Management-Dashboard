@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./static:/app/static
+      - ./templates:/app/templates
+    environment:
+      - DATABASE_URL=postgresql://user:password@db/energydb
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=energydb
+    restart: always
+
+volumes:
+  postgres_data:

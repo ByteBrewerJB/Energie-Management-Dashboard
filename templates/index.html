@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energie Management Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Energie Management Dashboard</h1>
+    </header>
+    <main>
+        <section id="controls">
+            <h2>Dashboard Controls</h2>
+            <form id="date-range-form">
+                <label for="start-date">Startdatum:</label>
+                <input type="date" id="start-date" name="start_date" required>
+                <label for="end-date">Einddatum:</label>
+                <input type="date" id="end-date" name="end_date" required>
+                <button type="submit">Analyse Laden</button>
+            </form>
+        </section>
+
+        <section id="kpi-container">
+            <h2>Kerncijfers (KPIs)</h2>
+            <div id="kpis">
+                <!-- KPI data will be loaded here by JavaScript -->
+            </div>
+        </section>
+
+        <section id="roi-tracker-container">
+            <h2>Return on Investment (ROI) Tracker</h2>
+            <div id="roi-tracker">
+                <!-- ROI progress bar will be loaded here -->
+            </div>
+        </section>
+
+        <section class="chart-container">
+            <h2>Energiebalans</h2>
+            <canvas id="energyBalanceChart"></canvas>
+        </section>
+
+        <section class="chart-container">
+            <h2>Verbruiksuitsplitsing (Huis vs. Auto)</h2>
+            <canvas id="consumptionSplitChart"></canvas>
+        </section>
+
+        <hr>
+
+        <section id="data-entry">
+            <h2>Nieuwe Maanddata Invoeren</h2>
+            <div id="data-entry-form-container">
+                <form id="metric-form">
+                    <div class="form-grid">
+                        <div>
+                            <label for="metric-period">Periode (Maand):</label>
+                            <input type="month" id="metric-period" name="period" required>
+                        </div>
+                        <div>
+                            <label for="metric-prepayment">Voorschot (€):</label>
+                            <input type="number" step="0.01" id="metric-prepayment" name="prepayment_amount" required>
+                        </div>
+                        <div>
+                            <label for="metric-generated">Totaal Opgewekt (kWh):</label>
+                            <input type="number" step="0.01" id="metric-generated" name="total_generated_kwh" required>
+                        </div>
+                        <div>
+                            <label for="metric-feedin">Totaal Teruggeleverd (kWh):</label>
+                            <input type="number" step="0.01" id="metric-feedin" name="total_feed_in_kwh" required>
+                        </div>
+                        <div>
+                            <label for="metric-import-low">Import Laag Tarief (kWh):</label>
+                            <input type="number" step="0.01" id="metric-import-low" name="import_low_rate_kwh" required>
+                        </div>
+                        <div>
+                            <label for="metric-import-high">Import Hoog Tarief (kWh):</label>
+                            <input type="number" step="0.01" id="metric-import-high" name="import_high_rate_kwh" required>
+                        </div>
+                        <div>
+                            <label for="metric-ev">Auto/EV Verbruik (kWh):</label>
+                            <input type="number" step="0.01" id="metric-ev" name="ev_consumption_kwh" required>
+                        </div>
+                        <div>
+                            <label for="metric-battery-charge">Batterij Laden (kWh):</label>
+                            <input type="number" step="0.01" id="metric-battery-charge" name="battery_charge_kwh" value="0">
+                        </div>
+                         <div>
+                            <label for="metric-battery-discharge">Batterij Ontladen (kWh):</label>
+                            <input type="number" step="0.01" id="metric-battery-discharge" name="battery_discharge_kwh" value="0">
+                        </div>
+                    </div>
+                    <button type="submit">Maanddata Opslaan</button>
+                </form>
+                <div id="form-status"></div>
+            </div>
+        </section>
+
+    </main>
+    <footer>
+        <p>Energie Dashboard v1.0</p>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

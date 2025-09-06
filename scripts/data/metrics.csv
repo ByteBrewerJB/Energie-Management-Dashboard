@@ -1,0 +1,4 @@
+period,account,total_generated_kwh,import_low_rate_kwh,import_high_rate_kwh,total_feed_in_kwh,ev_consumption_kwh,battery_charge_kwh,battery_discharge_kwh,prepayment_amount
+2024-01-01,household,150.5,300.2,150.8,50.1,100.0,0,0,150.00
+2024-02-01,household,250.7,250.9,120.3,100.2,110.0,0,0,150.00
+2024-03-01,household,450.2,150.1,80.5,250.6,120.0,0,0,150.00

@@ -1,97 +1,154 @@
-# JouleJournal - Energie Management Dashboard
+# JouleJournal - Energy Management Dashboard
 
-Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbruik, -opwekking, kosten en de financiële Return on Investment (ROI) van een zonnepaneleninstallatie.
+A web application for monitoring, analyzing, and reporting on energy consumption, generation, costs, and the financial Return on Investment (ROI) of a solar panel installation.
 
 ## Features
 
-- **Dynamisch Dashboard:** Real-time visualisatie van uw energiegegevens.
-- **KPI Overzicht:** Kerncijfers voor het huidige jaar, inclusief netto kosten en zelfvoorzienendheid.
-- **ROI Tracker:** Visuele voortgangsbalk die de terugverdientijd van uw investering toont.
-- **Interactieve Grafieken (Chart.js):**
-    - **Energiebalans:** Gestapelde staafgrafiek van Import, Export, en Eigen Verbruik.
-    - **Verbruiksuitsplitsing:** Taartdiagram dat verbruik van het huis vs. elektrische auto toont.
-    - **Productie vs. Forecast:** Lijngrafiek die werkelijke productie vergelijkt met de prognose.
-- **Robuuste Backend API:** Gebouwd met FastAPI voor snelle en betrouwbare dataverwerking.
-- **Containerized:** Volledig geconfigureerd om te draaien met Docker voor een eenvoudige en consistente setup.
+- **Dynamic Dashboard:** Real-time visualization of your energy data.
+- **KPI Overview:** Key Performance Indicators for the current year, including net costs and self-sufficiency.
+- **ROI Tracker:** A visual progress bar showing the payback period of your investment.
+- **Interactive Charts (Chart.js):**
+    - **Energy Balance:** Stacked bar chart of Import, Export, and Self-Consumption.
+    - **Consumption Breakdown:** Pie chart showing consumption from the house vs. an electric car.
+    - **Production vs. Forecast:** Line chart comparing actual production with the forecast.
+- **Robust Backend API:** Built with FastAPI for fast and reliable data processing.
+- **Containerized:** Fully configured to run with Docker for a simple and consistent setup.
 
-## Vereisten
+## Requirements
 
 - [Docker](https://www.docker.com/get-started)
-- Docker Compose V1 (docker-compose) of V2 (docker compose)
+- Docker Compose V1 (`docker-compose`) or V2 (`docker compose`)
 
-## Implementatie in Portainer (Aanbevolen)
+## Deployment in Portainer (Recommended)
 
-Voor een eenvoudige en beheerde implementatie kunt u deze applicatie als een "Stack" in Portainer draaien.
+For a simple and managed deployment, you can run this application as a "Stack" in Portainer.
 
-1.  **Navigeer naar Stacks:** Log in op uw Portainer-instantie en ga naar "Stacks" in het menu.
-2.  **Voeg een nieuwe Stack toe:** Klik op "Add stack".
-3.  **Configureer de Stack:**
-    *   **Name:** Geef uw stack een naam (bijv. `joulejournal`).
-    *   **Repository:** Selecteer "Repository" als de bouwmethode.
-    *   **Repository URL:** Plak de URL van deze GitHub repository.
-    *   **Compose path:** Zorg ervoor dat het pad is ingesteld op `docker-compose.yml`.
-4.  **Omgevingsvariabelen (Environment Variables):**
-    Voeg de volgende omgevingsvariabelen toe. Deze zijn essentieel voor de databaseverbinding. Klik op "Add environment variable" voor elke variabele.
-    *   `POSTGRES_USER`: De gebruikersnaam voor uw database (bijv. `joule`).
-    *   `POSTGRES_PASSWORD`: Een sterk wachtwoord voor de databasegebruiker.
-    *   `POSTGRES_DB`: De naam van de database (bijv. `joulejournal`).
-5.  **Implementeer de Stack:** Klik op "Deploy the stack" en wacht tot Portainer de images heeft gebouwd en de containers heeft gestart.
-6.  **Database Setup:** De database migraties en het seeden van de data gebeurt nu automatisch wanneer de `backend` container start.
-7.  **Bekijk de Applicatie:** Uw applicatie is nu beschikbaar op de hostnaam van uw Portainer-server op poort 8000 (bijv. `http://<uw-server-ip>:8000`).
+1.  **Navigate to Stacks:** Log in to your Portainer instance and go to "Stacks" in the menu.
+2.  **Add a new Stack:** Click on "Add stack".
+3.  **Configure the Stack:**
+    *   **Name:** Give your stack a name (e.g., `joulejournal`).
+    *   **Repository:** Select "Repository" as the build method.
+    *   **Repository URL:** Paste the URL of this GitHub repository.
+    *   **Compose path:** Ensure the path is set to `docker-compose.yml`.
+4.  **Environment Variables:**
+    Add the following environment variables. These are essential for the database connection. Click "Add environment variable" for each variable.
+    *   `POSTGRES_USER`: The username for your database (e.g., `joule`).
+    *   `POSTGRES_PASSWORD`: A strong password for the database user.
+    *   `POSTGRES_DB`: The name of the database (e.g., `joulejournal`).
+5.  **Deploy the Stack:** Click "Deploy the stack" and wait for Portainer to build the images and start the containers.
+6.  **Database Setup:** Database migrations and data seeding now happen automatically when the `backend` container starts.
+7.  **View the Application:** Your application is now available on the hostname of your Portainer server on port 8000 (e.g., `http://<your-server-ip>:8000`).
 
-## Lokale Installatie en Opstarten
+## Installation and Startup
 
-Volg deze stappen om de applicatie lokaal op te zetten en te draaien.
+You can run this project in two ways:
 
-1.  **Clone de Repository**
+1.  **With Docker (Recommended):** A containerized setup using PostgreSQL.
+2.  **Locally without Docker:** A local setup using a SQLite database.
+
+---
+
+### 1. With Docker (uses PostgreSQL)
+
+This is the recommended way to run the project, as it sets up a consistent environment with a PostgreSQL database.
+
+1.  **Clone the Repository**
     ```bash
     git clone <repository_url>
     cd joulejournal-project
     ```
 
-2.  **Maak een `.env` bestand**
-    Maak een bestand met de naam `.env` in de root van het project en voeg de volgende variabelen toe:
+2.  **Create a `.env` file**
+    Create a file named `.env` in the project root and add the following variables. These are used by `docker-compose.yml` to configure the PostgreSQL database.
     ```
     POSTGRES_USER=joule
-    POSTGRES_PASSWORD=eensterkwachtwoord
+    POSTGRES_PASSWORD=a_strong_password
     POSTGRES_DB=joulejournal
+    PORT=8000
     ```
 
-3.  **Bouw en Start de Applicatie**
-    Dit commando bouwt de Docker-image voor de backend en start alle services (backend en database) die zijn gedefinieerd in `docker-compose.yml`.
+3.  **Build and Start the Application**
+    This command builds the Docker image for the backend and starts all services (backend and database).
     ```bash
     docker-compose up --build
     ```
-    *Wacht tot de output aangeeft dat de Uvicorn-server draait.*
+    *Wait for the output to indicate that the Uvicorn server is running.*
 
-4.  **Database Setup**
-    De database migraties en het seeden van de data gebeurt nu automatisch wanneer de `backend` container start. U hoeft geen aparte commando's meer uit te voeren.
+    The `backend` service will automatically:
+    - Run database migrations using Alembic.
+    - Seed the database with initial data from `scripts/seed_db.py`.
 
-5.  **Bekijk de Applicatie**
-    Zodra de backend draait, is de applicatie volledig ingesteld.
-    - **Frontend Dashboard:** Open uw browser en ga naar [http://localhost:8000](http://localhost:8000)
-    - **API Documentatie (Swagger UI):** Ga naar [http://localhost:8000/docs](http://localhost:8000/docs)
+4.  **View the Application**
+    - **Frontend Dashboard:** [http://localhost:8000](http://localhost:8000)
+    - **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
-## Projectstructuur
+---
+
+### 2. Locally without Docker (uses SQLite)
+
+This setup is useful for local development and testing. It uses a simple SQLite database file (`joulejournal.db`).
+
+1.  **Clone the Repository**
+    ```bash
+    git clone <repository_url>
+    cd joulejournal-project
+    ```
+
+2.  **Set up a Virtual Environment**
+    It's recommended to use a virtual environment to manage dependencies.
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    ```
+
+3.  **Install Dependencies**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Run Database Migrations**
+    This will create the `joulejournal.db` file and set up the database schema.
+    ```bash
+    alembic upgrade head
+    ```
+
+5.  **Seed the Database**
+    This will populate the database with initial data.
+    ```bash
+    python scripts/seed_db.py
+    ```
+
+6.  **Start the Application**
+    ```bash
+    uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ```
+
+7.  **View the Application**
+    - **Frontend Dashboard:** [http://localhost:8000](http://localhost:8000)
+    - **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+## Project Structure
 
 ```
 .
-├── app/              # Backend FastAPI applicatie
-├── scripts/          # Hulpscripts (seed_db.py)
-├── static/           # Statische bestanden (CSS, JS)
+├── .env              # (Optional) Environment variables for Docker setup
+├── app/              # Backend FastAPI application
+├── scripts/          # Helper scripts (e.g., seed_db.py)
+├── static/           # Static files (CSS, JS)
 ├── templates/        # HTML templates
-├── alembic/          # Database migraties
+├── alembic/          # Database migrations
+├── joulejournal.db   # SQLite database file (used for local development)
 ├── Dockerfile
 └── docker-compose.yml
 ```
 
-## Stoppen van de Applicatie
+## Stopping the Application
 
-Om de containers te stoppen, druk op `Ctrl+C` in de terminal waar `docker-compose up` draait, of voer uit:
+To stop the containers, press `Ctrl+C` in the terminal where `docker-compose up` is running, or execute:
 ```bash
 docker-compose down
 ```
-Om ook de database-volume te verwijderen (LET OP: DIT VERWIJDERT ALLE DATA), gebruikt u:
+To also remove the database volume (CAUTION: THIS WILL DELETE ALL DATA), use:
 ```bash
 docker-compose down -v
 ```

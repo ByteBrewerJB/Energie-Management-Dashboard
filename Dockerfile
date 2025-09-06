@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire application source code into the container
 COPY . /app
 
+# Set the project root as the PYTHONPATH
+ENV PYTHONPATH /app
+
 # Set an argument for the port with a default value
 ARG PORT=5201
 # Set the environment variable for the port

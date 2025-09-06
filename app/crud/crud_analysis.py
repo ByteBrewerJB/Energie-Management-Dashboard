@@ -36,7 +36,7 @@ def get_metrics_for_period(db: Session, start_date: date, end_date: date) -> Lis
     """
     return db.query(MonthlyMetric).filter(
         and_(
-            MonthlyMetric.period >= start_date,
-            MonthlyMetric.period <= end_date
+            MonthlyMetric.period_start >= start_date,
+            MonthlyMetric.period_start <= end_date
         )
-    ).order_by(MonthlyMetric.period).all()
+    ).order_by(MonthlyMetric.period_start).all()

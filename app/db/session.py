@@ -2,10 +2,16 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from dotenv import load_dotenv
+
+# Load environment variables from .env file, so they are available for the app
+load_dotenv()
 
 # Read the database URL from the environment variable
-# Use a default for local development if not set
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@db/energydb")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("No DATABASE_URL set for the connection")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

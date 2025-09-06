@@ -46,16 +46,11 @@ def get_full_analysis(
     # 2. Process each month's metrics
     for metric in metrics:
         # --- Energy Flow Analysis ---
-        # Formula: Totaal Opgewekt - Totaal Teruggeleverd
-        self_consumption_kwh = metric.total_generated_kwh - metric.total_feed_in_kwh
-        # Formula: (Import Laag + Import Hoog) + Eigen Verbruik
-        total_consumption_kwh = (metric.import_low_rate_kwh + metric.import_high_rate_kwh) + self_consumption_kwh
-        # Formula: Totaal Verbruik - Auto/EV Verbruik
-        home_consumption_kwh = total_consumption_kwh - metric.ev_consumption_kwh
-        # Formula: (Eigen Verbruik / Totaal Verbruik) * 100%
+        self_consumption_kwh = metric.production_total_kwh - metric.export_total_kwh
+        total_consumption_kwh = (metric.import_low_kwh + metric.import_high_kwh) + self_consumption_kwh
+        home_consumption_kwh = total_consumption_kwh - metric.consumption_ev_kwh
         self_sufficiency_percent = (self_consumption_kwh / total_consumption_kwh) * 100 if total_consumption_kwh > 0 else 0
-        # Formula: (Eigen Verbruik / Totaal Opgewekt) * 100%
-        self_consumption_ratio_percent = (self_consumption_kwh / metric.total_generated_kwh) * 100 if metric.total_generated_kwh > 0 else 0
+        self_consumption_ratio_percent = (self_consumption_kwh / metric.production_total_kwh) * 100 if metric.production_total_kwh > 0 else 0
 
         energy_flow = EnergyFlowResult(
             self_consumption_kwh=self_consumption_kwh,
@@ -66,18 +61,13 @@ def get_full_analysis(
         )
 
         # --- Financial Management ---
-        tariff = get_tariff_for_month(metric.period, tariffs)
+        tariff = get_tariff_for_month(metric.period_start, tariffs)
         if not tariff:
-            # If no specific tariff, we can't calculate financials for this month.
-            # Or we could fall back to a default, but for now, we skip.
             continue
 
-        # Inkoopkosten: (Import Laag * Laag Tarief) + (Import Hoog * Hoog Tarief)
-        purchase_costs = (metric.import_low_rate_kwh * float(tariff.purchase_rate_low)) + \
-                         (metric.import_high_rate_kwh * float(tariff.purchase_rate_high))
-        # Verkoopopbrengsten: Totaal Teruggeleverd * Verkoop Tarief
-        feed_in_revenue = metric.total_feed_in_kwh * float(tariff.feed_in_rate)
-        # Netto Maandresultaat: Verkoopopbrengsten - Inkoopkosten
+        purchase_costs = (metric.import_low_kwh * float(tariff.purchase_low_eur_kwh)) + \
+                         (metric.import_high_kwh * float(tariff.purchase_high_eur_kwh))
+        feed_in_revenue = metric.export_total_kwh * float(tariff.sale_eur_kwh)
         net_result = feed_in_revenue - purchase_costs
 
         financials = FinancialResult(
@@ -88,25 +78,23 @@ def get_full_analysis(
 
         # --- ROI Calculation (per month contribution) ---
         if roi_method == "standard":
-            # Methode 1: Vermeden Kosten + Opbrengsten
-            avoided_costs = self_consumption_kwh * float(tariff.purchase_rate_low) # Assuming low rate for avoided costs for simplicity
+            avoided_costs = self_consumption_kwh * float(tariff.purchase_low_eur_kwh)
             monthly_roi_value = avoided_costs + feed_in_revenue
         elif roi_method == "excel":
-            # Methode 2: Totaal Opgewekt * Vastgesteld ROI Tarief
-            monthly_roi_value = metric.total_generated_kwh * float(tariff.fixed_roi_rate) if tariff.fixed_roi_rate else 0
+            monthly_roi_value = metric.production_total_kwh * float(tariff.fixed_roi_rate_eur_kwh) if tariff.fixed_roi_rate_eur_kwh else 0
         else:
             monthly_roi_value = 0
 
         total_earned_for_roi += monthly_roi_value
 
         monthly_analyses.append(MonthlyAnalysis(
-            period=metric.period.strftime("%Y-%m"),
+            period=metric.period_start.strftime("%Y-%m"),
             energy_flow=energy_flow,
             financials=financials
         ))
 
     # 3. Final ROI Calculation
-    total_investment = float(investment.total_investment_cost)
+    total_investment = float(investment.total_cost_eur)
     remaining_balance = total_investment - total_earned_for_roi
 
     roi = RoiResult(

@@ -4,6 +4,10 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -66,11 +70,12 @@ def run_migrations_online() -> None:
 
     # Create a configuration dictionary for engine_from_config
     # and set the URL programmatically
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration['sqlalchemy.url'] = db_url
+    # This ensures that the URL from .env is used
+    connectable_config = config.get_section(config.config_ini_section, {})
+    connectable_config['sqlalchemy.url'] = db_url
 
     connectable = engine_from_config(
-        configuration,
+        connectable_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

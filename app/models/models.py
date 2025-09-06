@@ -1,55 +1,39 @@
 from sqlalchemy import Column, Integer, String, Float, Date, Numeric
 from app.db.session import Base
 
-# 1. Installatie en Investering (System Setup & Investment)
 class Investment(Base):
     __tablename__ = "investments"
 
     id = Column(Integer, primary_key=True, index=True)
-    description = Column(String, default="Zonnepaneelinstallatie")
-    install_date = Column(Date, nullable=False)
-    total_investment_cost = Column(Numeric(10, 2), nullable=False)
-    total_wp = Column(Integer, nullable=False)
+    description = Column(String, nullable=False)
+    installation_date = Column(Date, nullable=False)
+    total_cost_eur = Column(Numeric(10, 2), nullable=False)
+    total_power_wp = Column(Integer, nullable=False)
     estimated_annual_production_kwh = Column(Integer)
-    inverter_type = Column(String)
 
-# 2. Energie Tarieven (Tariffs)
 class Tariff(Base):
     __tablename__ = "tariffs"
 
     id = Column(Integer, primary_key=True, index=True)
     start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=True) # Nullable for the currently active tariff
-    purchase_rate_low = Column(Numeric(10, 5), nullable=False)
-    purchase_rate_high = Column(Numeric(10, 5), nullable=False)
-    feed_in_rate = Column(Numeric(10, 5), nullable=False)
-    vat_percentage = Column(Numeric(5, 2), default=21.00)
-    fixed_roi_rate = Column(Numeric(10, 5), nullable=True) # For the "Excel method"
+    end_date = Column(Date, nullable=True)
+    purchase_low_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    purchase_high_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    sale_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    vat_percentage = Column(Numeric(5, 2), default=0.21)
+    fixed_roi_rate_eur_kwh = Column(Numeric(10, 5), nullable=True)
 
-# 3. Maandelijkse Metingen (Monthly Metrics)
 class MonthlyMetric(Base):
     __tablename__ = "monthly_metrics"
 
     id = Column(Integer, primary_key=True, index=True)
-    period = Column(Date, nullable=False, unique=True) # Store as the first day of the month
-    account = Column(String, default="household") # To support multi-account in the future
-
-    # Production
-    total_generated_kwh = Column(Float)
-
-    # Import from grid
-    import_low_rate_kwh = Column(Float)
-    import_high_rate_kwh = Column(Float)
-
-    # Export to grid
-    total_feed_in_kwh = Column(Float)
-
-    # Consumption breakdown
-    ev_consumption_kwh = Column(Float)
-
-    # Battery activity
+    period_start = Column(Date, nullable=False, unique=True)
+    account_name = Column(String, nullable=False)
+    production_total_kwh = Column(Float)
+    import_low_kwh = Column(Float)
+    import_high_kwh = Column(Float)
+    export_total_kwh = Column(Float)
+    consumption_ev_kwh = Column(Float)
     battery_charge_kwh = Column(Float, default=0.0)
     battery_discharge_kwh = Column(Float, default=0.0)
-
-    # Financial
-    prepayment_amount = Column(Numeric(10, 2))
+    monthly_prepayment_eur = Column(Numeric(10, 2))

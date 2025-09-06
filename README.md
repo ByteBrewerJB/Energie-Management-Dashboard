@@ -36,13 +36,7 @@ Voor een eenvoudige en beheerde implementatie kunt u deze applicatie als een "St
     *   `POSTGRES_PASSWORD`: Een sterk wachtwoord voor de databasegebruiker.
     *   `POSTGRES_DB`: De naam van de database (bijv. `joulejournal`).
 5.  **Implementeer de Stack:** Klik op "Deploy the stack" en wacht tot Portainer de images heeft gebouwd en de containers heeft gestart.
-6.  **Database Migraties & Seeding:**
-    *   Nadat de stack is geïmplementeerd, ga naar de "Stack" details en open de console van de `backend`-container.
-    *   Voer de volgende commando's uit in de console om de database op te zetten:
-        ```sh
-        alembic upgrade head
-        python scripts/seed_db.py
-        ```
+6.  **Database Setup:** De database migraties en het seeden van de data gebeurt nu automatisch wanneer de `backend` container start.
 7.  **Bekijk de Applicatie:** Uw applicatie is nu beschikbaar op de hostnaam van uw Portainer-server op poort 8000 (bijv. `http://<uw-server-ip>:8000`).
 
 ## Lokale Installatie en Opstarten
@@ -70,20 +64,11 @@ Volg deze stappen om de applicatie lokaal op te zetten en te draaien.
     ```
     *Wacht tot de output aangeeft dat de Uvicorn-server draait.*
 
-4.  **Draai Database Migraties (in een nieuw terminalvenster)**
-    Met de applicatie draaiend, opent u een tweede terminal. Dit commando past de database schema's toe.
-    ```bash
-    docker-compose exec backend alembic upgrade head
-    ```
-
-5.  **Seed de Database met Startdata (in hetzelfde nieuwe terminalvenster)**
-    Dit script vult de database met initiële data voor investeringen, tarieven en metingen, zodat het dashboard direct bruikbaar is.
-    ```bash
-    docker-compose exec backend python scripts/seed_db.py
-    ```
+4.  **Database Setup**
+    De database migraties en het seeden van de data gebeurt nu automatisch wanneer de `backend` container start. U hoeft geen aparte commando's meer uit te voeren.
 
 5.  **Bekijk de Applicatie**
-    De applicatie is nu volledig ingesteld en draait.
+    Zodra de backend draait, is de applicatie volledig ingesteld.
     - **Frontend Dashboard:** Open uw browser en ga naar [http://localhost:8000](http://localhost:8000)
     - **API Documentatie (Swagger UI):** Ga naar [http://localhost:8000/docs](http://localhost:8000/docs)
 

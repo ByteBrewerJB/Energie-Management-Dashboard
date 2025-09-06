@@ -2,10 +2,14 @@ version: '3.8'
 
 services:
   backend:
-    build: .
+    build:
+      context: .
+      args:
+        - PORT=${PORT:-5201}
     ports:
-      - "8000:8000"
+      - "${PORT:-5201}:${PORT:-5201}"
     environment:
+      - PORT=${PORT:-5201}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
       - db

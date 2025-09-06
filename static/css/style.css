@@ -1,39 +1,146 @@
+/* General Body & Typography */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
-    background-color: #f4f4f4;
+    background-color: #f0f2f5;
     color: #333;
     margin: 0;
-    padding: 20px;
 }
 
+/* Header */
 header {
-    background-color: #005a9e;
+    background: linear-gradient(90deg, #0052D4, #4364F7, #6FB1FC);
     color: #fff;
-    padding: 1rem;
+    padding: 20px 40px;
     text-align: center;
-    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+
+header p {
+    margin: 5px 0 0;
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+/* Main Content */
 main {
-    max-width: 1200px;
-    margin: auto;
-    background: #fff;
+    max-width: 1400px;
+    margin: 30px auto;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h2 {
+    color: #1c3d5a;
+    border-bottom: 3px solid #6FB1FC;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 section {
-    margin-bottom: 20px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+/* KPI Grid Layout */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.kpi-item {
+    background-color: #F8F9FA;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 5px solid #4364F7;
+}
+
+.kpi-item h3 {
+    margin-top: 0;
+    color: #0052D4;
+    font-size: 1.1rem;
+}
+
+.kpi-item p {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    color: #1c3d5a;
+}
+
+/* ROI Tracker */
+#roi-tracker {
+    padding: 20px;
+}
+
+.roi-summary p {
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.progress-bar-container {
+    background-color: #e9ecef;
+    border-radius: 25px;
+    height: 30px;
+    width: 100%;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #36A2EB, #4BC0C0);
+    height: 100%;
+    border-radius: 25px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: width 0.6s ease;
+}
+
+.roi-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* Chart Grid Layout */
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
 }
 
 .chart-container {
+    background: #fff;
     padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
-h1, h2 {
-    color: #005a9e;
+.chart-container.full-width {
+    grid-column: 1 / -1; /* Span full width */
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+    color: #777;
 }

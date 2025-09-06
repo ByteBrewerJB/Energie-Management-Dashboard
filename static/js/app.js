@@ -1,133 +1,137 @@
-// Energie Management Dashboard - Main Application Logic
+// JouleJournal Dashboard - Main Application Logic
 
 // Store chart instances to destroy them before re-rendering
 let energyBalanceChartInstance = null;
 let consumptionSplitChartInstance = null;
+let productionForecastChartInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Dashboard Initialized.');
-
-    // --- EVENT LISTENERS ---
-    const dateForm = document.getElementById('date-range-form');
-    if (dateForm) {
-        dateForm.addEventListener('submit', handleAnalysisFormSubmit);
-    }
-
-    const metricForm = document.getElementById('metric-form');
-    if (metricForm) {
-        metricForm.addEventListener('submit', handleMetricFormSubmit);
-    }
-
-    // --- INITIAL DATA LOAD ---
-    // Set default dates to the last 3 months and load data
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 3);
-
-    const startDateString = startDate.toISOString().split('T')[0];
-    const endDateString = endDate.toISOString().split('T')[0];
-
-    document.getElementById('start-date').value = startDateString;
-    document.getElementById('end-date').value = endDateString;
-
-    loadDashboard(startDateString, endDateString);
+    console.log('JouleJournal Dashboard Initialized.');
+    loadAllData();
 });
 
-async function handleAnalysisFormSubmit(event) {
-    event.preventDefault();
-    const form = event.target;
-    const startDate = form.elements.start_date.value;
-    const endDate = form.elements.end_date.value;
-    await loadDashboard(startDate, endDate);
-}
-
-async function loadDashboard(startDate, endDate) {
-    console.log(`Loading dashboard for ${startDate} to ${endDate}`);
+/**
+ * Fetches all necessary data from the backend API concurrently.
+ */
+async function loadAllData() {
     const kpisDiv = document.getElementById('kpis');
-    kpisDiv.innerHTML = '<em>Loading analysis...</em>';
+    kpisDiv.innerHTML = '<em>Loading dashboard data...</em>';
+
+    // For simplicity, we fetch for the current year.
+    const currentYear = new Date().getFullYear();
+    const startDate = `${currentYear}-01-01`;
+    const endDate = `${currentYear}-12-31`;
+
+    // Define API endpoints
+    const timeseriesUrl = `/api/analysis/timeseries?start_date=${startDate}&end_date=${endDate}`;
+    const roiUrl = '/api/roi/1'; // Assuming investment_id=1 for the main dashboard
+    const forecastUrl = '/api/forecast/production';
 
     try {
-        const response = await fetch(`/api/v1/analysis?start_date=${startDate}&end_date=${endDate}`);
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to fetch analysis data.');
-        }
-        const data = await response.json();
+        const [timeseriesRes, roiRes, forecastRes] = await Promise.all([
+            fetch(timeseriesUrl),
+            fetch(roiUrl),
+            fetch(forecastUrl)
+        ]);
 
-        renderKPIs(data.monthly_data);
-        renderRoiTracker(data.roi);
-        renderEnergyBalanceChart(data.monthly_data);
-        renderConsumptionSplitChart(data.monthly_data);
+        if (!timeseriesRes.ok) throw new Error(`Failed to fetch timeseries data: ${timeseriesRes.statusText}`);
+        if (!roiRes.ok) throw new Error(`Failed to fetch ROI data: ${roiRes.statusText}`);
+        if (!forecastRes.ok) throw new Error(`Failed to fetch forecast data: ${forecastRes.statusText}`);
+
+        const timeseriesData = await timeseriesRes.json();
+        const roiData = await roiRes.json();
+        const forecastData = await forecastRes.json();
+
+        // Render all components with the fetched data
+        renderKPIs(timeseriesData, currentYear);
+        renderRoiTracker(roiData);
+        renderEnergyBalanceChart(timeseriesData);
+        renderConsumptionSplitChart(timeseriesData);
+        renderProductionForecastChart(timeseriesData, forecastData);
 
     } catch (error) {
-        console.error('Failed to load dashboard:', error);
-        kpisDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        console.error('Failed to load dashboard data:', error);
+        kpisDiv.innerHTML = `<p style="color: red;">Error loading dashboard: ${error.message}</p>`;
     }
 }
 
-function renderKPIs(monthlyData) {
+/**
+ * Renders Key Performance Indicators for the specified year.
+ */
+function renderKPIs(timeseriesData, year) {
     const kpisDiv = document.getElementById('kpis');
-    if (!monthlyData || monthlyData.length === 0) {
-        kpisDiv.innerHTML = '<p>No data available for this period.</p>';
+    if (!timeseriesData || timeseriesData.length === 0) {
+        kpisDiv.innerHTML = '<p>No data available for the current year.</p>';
         return;
     }
 
-    const totalCosts = monthlyData.reduce((sum, d) => sum + d.financials.purchase_costs, 0);
-    const totalRevenue = monthlyData.reduce((sum, d) => sum + d.financials.feed_in_revenue, 0);
-    const totalNetResult = totalRevenue - totalCosts;
-    const avgSelfSufficiency = monthlyData.reduce((sum, d) => sum + d.energy_flow.self_sufficiency_percent, 0) / monthlyData.length;
+    const totalNetCosts = timeseriesData.reduce((sum, data) => sum + data.financials.net_costs, 0);
+    const totalSelfSufficiency = timeseriesData.reduce((sum, data) => sum + data.energy_flow.self_sufficiency_ratio, 0);
+    const averageSelfSufficiency = totalSelfSufficiency / timeseriesData.length * 100; // as percentage
 
     kpisDiv.innerHTML = `
-        <div><strong>Totale Kosten:</strong> € ${totalCosts.toFixed(2)}</div>
-        <div><strong>Totale Opbrengsten:</strong> € ${totalRevenue.toFixed(2)}</div>
-        <div><strong>Netto Resultaat:</strong> € ${totalNetResult.toFixed(2)}</div>
-        <div><strong>Gem. Zelfvoorzienendheid:</strong> ${avgSelfSufficiency.toFixed(1)} %</div>
+        <div class="kpi-item">
+            <h3>Totaal Netto Kosten (${year})</h3>
+            <p>€ ${totalNetCosts.toFixed(2)}</p>
+        </div>
+        <div class="kpi-item">
+            <h3>Gem. Zelfvoorzienendheid</h3>
+            <p>${averageSelfSufficiency.toFixed(1)} %</p>
+        </div>
     `;
 }
 
+/**
+ * Renders the ROI tracker progress bar.
+ */
 function renderRoiTracker(roiData) {
     const roiDiv = document.getElementById('roi-tracker');
-    const percentage = (roiData.total_earned / roiData.total_investment) * 100;
+    if (!roiData) {
+        roiDiv.innerHTML = '<p>ROI data not available.</p>';
+        return;
+    }
+
+    const { progress_percentage, cumulative_savings, remaining_balance } = roiData;
 
     roiDiv.innerHTML = `
-        <p>
-            <strong>€ ${roiData.total_earned.toFixed(2)}</strong> van
-            <strong>€ ${roiData.total_investment.toFixed(2)}</strong> terugverdiend.
-            (Nog te gaan: € ${roiData.remaining_balance.toFixed(2)})
-        </p>
+        <div class="roi-summary">
+             <p><strong>Voortgang:</strong> € ${cumulative_savings.toFixed(2)} / € ${(cumulative_savings + remaining_balance).toFixed(2)}</p>
+        </div>
         <div class="progress-bar-container">
-            <div class="progress-bar" style="width: ${percentage.toFixed(2)}%;">
-                ${percentage.toFixed(1)}%
+            <div class="progress-bar" style="width: ${progress_percentage.toFixed(2)}%;">
+                ${progress_percentage.toFixed(1)}%
             </div>
         </div>
-        <small>Methode: ${roiData.calculation_method}</small>
+         <div class="roi-details">
+            <span>Besparing: € ${cumulative_savings.toFixed(2)}</span>
+            <span>Resterend: € ${remaining_balance.toFixed(2)}</span>
+        </div>
     `;
 }
 
-function renderEnergyBalanceChart(monthlyData) {
+
+/**
+ * Renders the stacked bar chart for energy balance.
+ */
+function renderEnergyBalanceChart(timeseriesData) {
     const ctx = document.getElementById('energyBalanceChart').getContext('2d');
-    const labels = monthlyData.map(d => d.period);
+    const labels = timeseriesData.map(d => new Date(d.metric.period_start).toLocaleString('default', { month: 'short' }));
 
     const datasets = [
         {
             label: 'Import (kWh)',
-            data: monthlyData.map(d => d.energy_flow.total_consumption_kwh - d.energy_flow.self_consumption_kwh),
-            backgroundColor: 'rgba(255, 99, 132, 0.5)',
-        },
-        {
-            label: 'Export (kWh)',
-            data: monthlyData.map(d => d.energy_flow.self_consumption_kwh > 0 ? (d.energy_flow.self_consumption_kwh / d.energy_flow.self_consumption_ratio_percent * 100) - d.energy_flow.self_consumption_kwh : 0 ),
-            backgroundColor: 'rgba(255, 206, 86, 0.5)',
-        },
-        {
-            label: 'Opgewekt (kWh)',
-            data: monthlyData.map(d => d.energy_flow.self_consumption_kwh > 0 ? (d.energy_flow.self_consumption_kwh / d.energy_flow.self_consumption_ratio_percent * 100) : 0),
-            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            data: timeseriesData.map(d => d.energy_flow.import_total_kwh),
+            backgroundColor: '#FF6384',
         },
         {
             label: 'Eigen Verbruik (kWh)',
-            data: monthlyData.map(d => d.energy_flow.self_consumption_kwh),
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            data: timeseriesData.map(d => d.energy_flow.self_consumption_kwh),
+            backgroundColor: '#36A2EB',
+        },
+        {
+            label: 'Export (kWh)',
+            data: timeseriesData.map(d => d.metric.export_total_kwh),
+            backgroundColor: '#FFCE56',
         }
     ];
 
@@ -139,72 +143,109 @@ function renderEnergyBalanceChart(monthlyData) {
         type: 'bar',
         data: { labels, datasets },
         options: {
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Maandelijkse Energiebalans (Import, Export, Eigen Verbruik)' },
+                tooltip: { mode: 'index', intersect: false },
+            },
             scales: {
                 x: { stacked: true },
-                y: { stacked: true, beginAtZero: true }
+                y: { stacked: true, beginAtZero: true, title: { display: true, text: 'kWh' } }
             }
         }
     });
 }
 
-function renderConsumptionSplitChart(monthlyData) {
+/**
+ * Renders the pie chart for consumption breakdown.
+ */
+function renderConsumptionSplitChart(timeseriesData) {
     const ctx = document.getElementById('consumptionSplitChart').getContext('2d');
-    const totalHome = monthlyData.reduce((sum, d) => sum + d.energy_flow.home_consumption_kwh, 0);
-    const totalEV = monthlyData.reduce((sum, d) => sum + (d.energy_flow.total_consumption_kwh - d.energy_flow.home_consumption_kwh), 0);
+
+    const totalHomeConsumption = timeseriesData.reduce((sum, d) => sum + d.energy_flow.home_consumption_kwh, 0);
+    const totalEvConsumption = timeseriesData.reduce((sum, d) => sum + d.metric.consumption_ev_kwh, 0);
 
     if (consumptionSplitChartInstance) {
         consumptionSplitChartInstance.destroy();
     }
 
     consumptionSplitChartInstance = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'pie',
         data: {
-            labels: ['Huis Verbruik (kWh)', 'Auto/EV Verbruik (kWh)'],
+            labels: ['Huis Verbruik', 'Auto (EV) Verbruik'],
             datasets: [{
-                data: [totalHome, totalEV],
-                backgroundColor: ['rgba(153, 102, 255, 0.5)', 'rgba(255, 159, 64, 0.5)']
+                data: [totalHomeConsumption, totalEvConsumption],
+                backgroundColor: ['#4BC0C0', '#9966FF'],
+                hoverOffset: 4
             }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Uitsplitsing Totaal Verbruik (Huidig Jaar)' },
+            }
         }
     });
 }
 
-// --- METRIC FORM SUBMISSION ---
-async function handleMetricFormSubmit(event) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-    const statusDiv = document.getElementById('form-status');
+/**
+ * Renders the line chart comparing actual production with the forecast.
+ */
+function renderProductionForecastChart(timeseriesData, forecastData) {
+    const ctx = document.getElementById('productionForecastChart').getContext('2d');
 
-    const data = {};
-    formData.forEach((value, key) => { data[key] = value; });
+    const labels = forecastData.forecast.map(f => f.month);
+    const forecastValues = forecastData.forecast.map(f => f.kwh);
 
-    if (data.period) {
-        data.period = `${data.period}-01`;
+    // Create a map for quick lookup of actual production by month name
+    const actualsMap = new Map();
+    timeseriesData.forEach(d => {
+        const monthName = new Date(d.metric.period_start).toLocaleString('default', { month: 'short' });
+        actualsMap.set(monthName, d.metric.production_total_kwh);
+    });
+
+    // Align actual data with forecast labels
+    const actualValues = labels.map(label => actualsMap.get(label) || 0);
+
+    if (productionForecastChartInstance) {
+        productionForecastChartInstance.destroy();
     }
 
-    statusDiv.textContent = 'Submitting...';
-    statusDiv.style.color = 'blue';
-
-    try {
-        const response = await fetch('/api/v1/metrics', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-
-        if (response.ok) {
-            const result = await response.json();
-            statusDiv.textContent = `Success! Metric for period ${result.period} created with ID ${result.id}.`;
-            statusDiv.style.color = 'green';
-            form.reset();
-        } else {
-            const error = await response.json();
-            statusDiv.textContent = `Error: ${error.detail || 'Failed to submit data.'}`;
-            statusDiv.style.color = 'red';
+    productionForecastChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Werkelijke Productie (kWh)',
+                    data: actualValues,
+                    borderColor: '#36A2EB',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'Verwachte Productie (kWh)',
+                    data: forecastValues,
+                    borderColor: '#FF6384',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderDash: [5, 5], // Dashed line for forecast
+                    fill: false,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Werkelijke Productie vs. Forecast' },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'kWh' }
+                }
+            }
         }
-    } catch (error) {
-        console.error('Submission error:', error);
-        statusDiv.textContent = 'A network error occurred. Please try again.';
-        statusDiv.style.color = 'red';
-    }
+    });
 }

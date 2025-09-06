@@ -12,7 +12,9 @@ def calculate_energy_flow(metric: MonthlyMetric) -> dict:
     """
     self_consumption_kwh = metric.production_total_kwh - metric.export_total_kwh
     total_consumption_kwh = (metric.import_low_kwh + metric.import_high_kwh) + self_consumption_kwh
-    home_consumption_kwh = total_consumption_kwh - metric.consumption_ev_kwh
+
+    # Subtract EV and battery charging from total consumption to find home consumption
+    home_consumption_kwh = total_consumption_kwh - metric.consumption_ev_kwh - metric.battery_charge_kwh
 
     if total_consumption_kwh > 0:
         self_sufficiency_ratio = self_consumption_kwh / total_consumption_kwh

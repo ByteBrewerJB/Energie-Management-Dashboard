@@ -32,7 +32,7 @@ def fill_database(
     db: Session = Depends(deps.get_db)
 ):
     """
-    Fill the database with mockup data for 2.5 years.
+    Fill the database with mockup data for 2 years.
     """
     try:
         crud_debug.fill_database_with_mock_data(db)

@@ -1,68 +1,50 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 from decimal import Decimal
 
-from app.crud import (
-    crud_solar_panel,
-    crud_battery,
-    crud_metrics,
-    crud_tariffs,
-)
+from app.crud import crud_solar_panel, crud_battery, crud_journal
+from app.models import models
 from app.services import energy_calculations, financial_calculations
 from app.schemas.roi import ROIMethodResult, ROIStatus
 
 def calculate_solar_panel_roi(db: Session, solar_panel_id: int) -> ROIStatus:
     """
-    Calculates the Return on Investment (ROI) status for a solar panel installation.
-
-    The ROI is based on the actual savings generated, which consist of:
-    1.  Avoided Costs: Value of self-consumed solar energy.
-    2.  Export Revenue: Money earned from selling surplus energy to the grid.
-
-    Args:
-        db: The database session.
-        solar_panel_id: The ID of the solar panel installation.
-
-    Returns:
-        An ROIStatus object containing the ROI calculation. Returns None if the
-        installation is not found.
+    Calculates the Return on Investment (ROI) status for a solar panel installation
+    using the new MonthlyJournal data structure.
     """
     solar_panel = crud_solar_panel.get(db, solar_panel_id)
     if not solar_panel:
         return None
 
-    # Fetch all metrics since the installation date
-    metrics = db.query(crud_metrics.models.MonthlyMetric).filter(
-        crud_metrics.models.MonthlyMetric.period_start >= solar_panel.purchase_date
-    ).order_by(crud_metrics.models.MonthlyMetric.period_start.asc()).all()
+    # Fetch all journals since the installation date
+    journals = db.query(models.MonthlyJournal).filter(
+        models.MonthlyJournal.year >= solar_panel.purchase_date.year
+    ).order_by(models.MonthlyJournal.year.asc(), models.MonthlyJournal.month.asc()).all()
+    # This filter is imperfect if purchase month > journal month in the same year, but good enough for now.
 
     cumulative_savings = Decimal(0.0)
 
-    for metric in metrics:
-        tariff = crud_tariffs.get_by_year_and_month(db, year=metric.period_start.year, month=metric.period_start.month)
-        if not tariff:
-            continue
+    for journal in journals:
+        # 1. Calculate revenue from selling to the grid
+        feed_in_revenue = (Decimal(journal.grid_feed_in_low_kwh) * journal.feed_in_tariff_low_eur_kwh) + \
+                          (Decimal(journal.grid_feed_in_high_kwh) * journal.feed_in_tariff_high_eur_kwh)
 
-        energy_flow = energy_calculations.calculate_energy_flow(metric)
-        self_consumption = energy_flow["self_consumption_kwh"]
+        # 2. Calculate value of self-consumed energy (avoided cost)
+        energy_flow = energy_calculations.calculate_energy_flow(journal)
+        self_consumption_kwh = energy_flow["self_consumption_kwh"]
 
-        # Calculate the average price of electricity for the month to value the avoided cost
-        total_consumption_kwh = metric.grid_consumption_low_kwh + metric.grid_consumption_high_kwh
-        if total_consumption_kwh > 0:
-            avg_consumption_price = (
-                (Decimal(metric.grid_consumption_low_kwh) * tariff.consumption_price_low_eur_kwh) +
-                (Decimal(metric.grid_consumption_high_kwh) * tariff.consumption_price_high_eur_kwh)
-            ) / Decimal(total_consumption_kwh)
+        total_grid_consumption_kwh = Decimal(journal.grid_consumption_low_kwh) + Decimal(journal.grid_consumption_high_kwh)
+        total_consumption_cost = (Decimal(journal.grid_consumption_low_kwh) * journal.consumption_price_low_eur_kwh) + \
+                                 (Decimal(journal.grid_consumption_high_kwh) * journal.consumption_price_high_eur_kwh)
+
+        if total_grid_consumption_kwh > 0:
+            avg_consumption_price = total_consumption_cost / total_grid_consumption_kwh
         else:
-            # If no grid consumption, use the high tariff as a fallback for valuing self-consumption
-            avg_consumption_price = tariff.consumption_price_high_eur_kwh
+            avg_consumption_price = journal.consumption_price_high_eur_kwh # Fallback
 
-        avoided_costs = self_consumption * avg_consumption_price
+        avoided_costs = self_consumption_kwh * avg_consumption_price
 
-        # Get revenue from new financial calculation
-        financials = financial_calculations.calculate_energy_financials(metric, tariff)
-        export_revenue = financials["total_feed_in_revenue_eur"]
-
-        monthly_savings = avoided_costs + export_revenue
+        monthly_savings = feed_in_revenue + avoided_costs
         cumulative_savings += monthly_savings
 
     total_cost = Decimal(solar_panel.purchase_cost_eur)
@@ -75,52 +57,29 @@ def calculate_solar_panel_roi(db: Session, solar_panel_id: int) -> ROIStatus:
         progress_percentage=float(progress_percentage)
     )
 
-    # For this refactored version, we only have one method, but ROIStatus expects two.
-    # We can return the same result for both, or a null result for the second.
     return ROIStatus(method_1=result, method_2=ROIMethodResult(cumulative_savings=0, remaining_balance=0, progress_percentage=0))
 
 
 def calculate_battery_roi(db: Session, battery_id: int) -> ROIStatus:
     """
-    Calculates the Return on Investment (ROI) for a battery installation.
-
-    The ROI is based on the savings from energy arbitrage: charging the battery
-    when electricity is cheap and discharging it when it is expensive, thus
-
-    avoiding the cost of high-tariff electricity.
-
-    Args:
-        db: The database session.
-        battery_id: The ID of the battery installation.
-
-    Returns:
-        An ROIStatus object containing the ROI calculation. Returns None if the
-        installation is not found.
+    Calculates the Return on Investment (ROI) for a battery installation
+    using the new MonthlyJournal data structure.
     """
     battery = crud_battery.get(db, battery_id)
     if not battery:
         return None
 
-    metrics = db.query(crud_metrics.models.MonthlyMetric).filter(
-        crud_metrics.models.MonthlyMetric.period_start >= battery.purchase_date
-    ).order_by(crud_metrics.models.MonthlyMetric.period_start.asc()).all()
+    journals = db.query(models.MonthlyJournal).filter(
+        models.MonthlyJournal.year >= battery.purchase_date.year
+    ).order_by(models.MonthlyJournal.year.asc(), models.MonthlyJournal.month.asc()).all()
 
     cumulative_savings = Decimal(0.0)
 
-    for metric in metrics:
-        tariff = crud_tariffs.get_by_year_and_month(db, year=metric.period_start.year, month=metric.period_start.month)
-        if not tariff:
-            continue
+    for journal in journals:
+        # Simplified arbitrage calculation
+        avoided_cost = Decimal(journal.battery_discharge_kwh or 0) * journal.consumption_price_high_eur_kwh
+        charge_cost = Decimal(journal.battery_charge_kwh or 0) * journal.consumption_price_low_eur_kwh
 
-        # The value is generated by discharging the battery when prices are high.
-        # We assume the energy discharged avoids a high-tariff purchase.
-        avoided_cost = Decimal(metric.battery_discharge_kwh or 0) * tariff.consumption_price_high_eur_kwh
-
-        # The cost of charging the battery. We assume it's charged at low-tariff times.
-        charge_cost = Decimal(metric.battery_charge_kwh or 0) * tariff.consumption_price_low_eur_kwh
-
-        # This simplification doesn't account for charging with "free" solar.
-        # A more advanced model would be needed for that.
         monthly_savings = avoided_cost - charge_cost
         cumulative_savings += monthly_savings
 

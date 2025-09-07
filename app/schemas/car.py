@@ -1,19 +1,17 @@
-from __future__ import annotations
-from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
-
-# Using newest commit (feat/full-dashboard-refactor): Pydantic v2 style and forward refs via __future__
-from .car_usage import CarUsage
-
+from decimal import Decimal
+from typing import Optional
 
 # Shared properties
 class CarBase(BaseModel):
     name: Optional[str] = None
+    reimbursement_rate_eur_per_kwh: Optional[Decimal] = None
 
 
 # Properties to receive on item creation
 class CarCreate(CarBase):
     name: str
+    reimbursement_rate_eur_per_kwh: Decimal
 
 
 # Properties to receive on item update
@@ -25,21 +23,11 @@ class CarUpdate(CarBase):
 class CarInDBBase(CarBase):
     id: int
     name: str
+    reimbursement_rate_eur_per_kwh: Decimal
 
-    # Pydantic v2 config
     model_config = ConfigDict(from_attributes=True)
 
 
 # Properties to return to client
 class Car(CarInDBBase):
     pass
-
-
-# Car with related usage records
-class CarWithUsage(Car):
-    # With __future__ annotations, this will be resolved lazily
-    usage_records: List[CarUsage] = []
-
-
-# Ensure forward refs are resolved (safe no-op if already resolved)
-CarWithUsage.model_rebuild()

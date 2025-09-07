@@ -30,7 +30,10 @@ def create(db: Session, *, obj_in: CarCreate) -> models.Car:
     """
     Creates a new car record.
     """
-    db_obj = models.Car(name=obj_in.name)
+    db_obj = models.Car(
+        name=obj_in.name,
+        reimbursement_rate_eur_per_kwh=obj_in.reimbursement_rate_eur_per_kwh
+    )
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
@@ -43,7 +46,8 @@ def update(
     """
     Updates an existing car record.
     """
-    update_data = obj_in.dict(exclude_unset=True)
+    # Use Pydantic v2 .model_dump()
+    update_data = obj_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_obj, field, value)
 

@@ -4,9 +4,8 @@ from typing import List, Any
 
 from app.db.session import get_db
 from app.api import deps
-from app.schemas.car import Car, CarCreate, CarUpdate, CarWithUsage
-from app.schemas.car_usage import CarUsage, CarUsageCreate
-from app.crud import crud_car, crud_car_usage
+from app.schemas.car import Car, CarCreate, CarUpdate
+from app.crud import crud_car
 
 router = APIRouter()
 
@@ -44,14 +43,15 @@ def create_car(
     return car
 
 
-@router.get("/cars/{car_id}", response_model=CarWithUsage)
+@router.get("/cars/{car_id}", response_model=Car)
 def read_car(
     *,
     db: Session = Depends(get_db),
     car_id: int,
+    current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
-    Get a specific car by its ID, including its usage records.
+    Get a specific car by its ID.
     """
     car = crud_car.get(db, car_id=car_id)
     if not car:
@@ -94,26 +94,3 @@ def delete_car(
 
     car = crud_car.remove(db=db, car_id=car_id)
     return car
-
-
-@router.post("/cars/{car_id}/usage", response_model=CarUsage, status_code=status.HTTP_201_CREATED)
-def create_car_usage_record(
-    *,
-    db: Session = Depends(get_db),
-    car_id: int,
-    usage_in: CarUsageCreate,
-    current_user: str = Depends(deps.get_current_user),
-) -> Any:
-    """
-    Create a new usage record for a specific car.
-    """
-    car = crud_car.get(db, car_id=car_id)
-    if not car:
-        raise HTTPException(status_code=404, detail="Car not found")
-
-    # Make sure the car_id in the payload matches the path
-    if usage_in.car_id != car_id:
-        raise HTTPException(status_code=400, detail=f"The car_id in the payload ({usage_in.car_id}) does not match the car_id in the URL ({car_id}).")
-
-    usage_record = crud_car_usage.create(db=db, obj_in=usage_in)
-    return usage_record

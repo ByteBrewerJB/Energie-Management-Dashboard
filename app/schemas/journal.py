@@ -38,6 +38,22 @@ class MonthlyJournalBase(BaseModel):
 class MonthlyJournalCreate(MonthlyJournalBase):
     car_entries: List[CarJournalEntryCreate] = []
 
+
+class MonthlyJournalUpdate(BaseModel):
+    grid_consumption_low_kwh: Optional[float] = None
+    grid_consumption_high_kwh: Optional[float] = None
+    grid_feed_in_low_kwh: Optional[float] = None
+    grid_feed_in_high_kwh: Optional[float] = None
+    consumption_price_low_eur_kwh: Optional[Decimal] = None
+    consumption_price_high_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_low_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_high_eur_kwh: Optional[Decimal] = None
+    solar_production_kwh: Optional[float] = None
+    battery_charge_kwh: Optional[float] = None
+    battery_discharge_kwh: Optional[float] = None
+    monthly_prepayment_eur: Optional[Decimal] = None
+
+
 class MonthlyJournal(MonthlyJournalBase):
     id: int
     car_entries: List[CarJournalEntry] = []

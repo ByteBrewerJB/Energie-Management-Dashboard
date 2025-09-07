@@ -41,7 +41,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Include the API routers
-app.include_router(journal.router, prefix="/api/journal", tags=["Journal"])
+app.include_router(journal.router, prefix="/api/metrics", tags=["Metrics"])
 app.include_router(roi.router, prefix="/api", tags=["ROI"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(solar_panels.router, prefix="/api", tags=["Solar Panels"])

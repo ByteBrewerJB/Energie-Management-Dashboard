@@ -62,22 +62,22 @@ class MonthlyJournal(Base):
     month = Column(Integer, nullable=False)
 
     # --- Metrics from the energy provider ---
-    grid_consumption_low_kwh = Column(Float, nullable=False)
-    grid_consumption_high_kwh = Column(Float, nullable=False)
-    grid_feed_in_low_kwh = Column(Float, nullable=False)
-    grid_feed_in_high_kwh = Column(Float, nullable=False)
+    grid_consumption_low_kwh = Column(Float, nullable=True)
+    grid_consumption_high_kwh = Column(Float, nullable=True)
+    grid_feed_in_low_kwh = Column(Float, nullable=True)
+    grid_feed_in_high_kwh = Column(Float, nullable=True)
 
     # --- Tariffs for this month ---
-    consumption_price_low_eur_kwh = Column(Numeric(10, 5), nullable=False)
-    consumption_price_high_eur_kwh = Column(Numeric(10, 5), nullable=False)
-    feed_in_tariff_low_eur_kwh = Column(Numeric(10, 5), nullable=False)
-    feed_in_tariff_high_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    consumption_price_low_eur_kwh = Column(Numeric(10, 5), nullable=True)
+    consumption_price_high_eur_kwh = Column(Numeric(10, 5), nullable=True)
+    feed_in_tariff_low_eur_kwh = Column(Numeric(10, 5), nullable=True)
+    feed_in_tariff_high_eur_kwh = Column(Numeric(10, 5), nullable=True)
 
     # --- Internal metrics & settings ---
-    solar_production_kwh = Column(Float, nullable=False)
-    battery_charge_kwh = Column(Float, default=0.0)
-    battery_discharge_kwh = Column(Float, default=0.0)
-    monthly_prepayment_eur = Column(Numeric(10, 2), nullable=False)
+    solar_production_kwh = Column(Float, nullable=True)
+    battery_charge_kwh = Column(Float, nullable=True)
+    battery_discharge_kwh = Column(Float, nullable=True)
+    monthly_prepayment_eur = Column(Numeric(10, 2), nullable=True)
 
     # --- Relationships ---
     car_entries = relationship("CarJournalEntry", back_populates="journal", cascade="all, delete-orphan")

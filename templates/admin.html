@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JouleJournal - Admin Dashboard</title>
     <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
 </head>
 <body>
     <div class="container">
@@ -16,6 +17,13 @@
                     <li><button id="logout-button">Logout</button></li>
                 </ul>
             </nav>
+            <div class="theme-switcher-container">
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <span id="theme-label">Dark Mode</span>
+            </div>
         </div>
         <div class="content">
             <header>
@@ -42,7 +50,10 @@
 
                 <div id="metrics" class="tab-content">
                     <h2>Manage Monthly Metrics</h2>
-                    <button class="add-new-btn" data-model="metric">Add New Metric</button>
+                    <div class="toolbar">
+                        <label for="metric-year-selector">Select Year:</label>
+                        <select id="metric-year-selector"></select>
+                    </div>
                     <div id="metrics-table-container"></div>
                 </div>
             </main>
@@ -63,5 +74,6 @@
     </div>
 
     <script src="/static/js/admin.js"></script>
+    <script src="/static/js/theme.js"></script>
 </body>
 </html>

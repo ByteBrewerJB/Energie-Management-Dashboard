@@ -7,6 +7,14 @@ WORKDIR /app
 # Install Poetry
 RUN pip install poetry
 
+# Install system dependencies required for building Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    python3-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy the dependency files
 COPY pyproject.toml poetry.lock ./
 
@@ -14,7 +22,7 @@ COPY pyproject.toml poetry.lock ./
 # --no-interaction: Do not ask any interactive question
 # --no-root: Do not install the root package (the project itself)
 # --no-dev: Do not install dev dependencies
-RUN poetry install --no-interaction --no-root --no-dev
+RUN poetry install -vvv --no-interaction --no-root --no-dev
 
 # Copy the entire application source code into the container
 COPY . /app

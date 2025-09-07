@@ -9,18 +9,17 @@ from app.crud import crud_journal
 
 router = APIRouter()
 
-@router.get("/{year}", response_model=List[journal_schema.MonthlyJournal])
-def read_journals_for_year(
-    year: int,
+@router.get("/", response_model=List[journal_schema.MonthlyJournal])
+def read_journals(
     db: Session = Depends(get_db),
     current_user: str = Depends(deps.get_current_user)
 ):
     """
-    Retrieve all monthly journal entries for a specific year.
-    If a journal for a month doesn't exist, it will be created.
+    Retrieve the last 24 monthly journal entries, sorted chronologically.
     """
-    journals = crud_journal.get_or_create_journals_for_year(db, year=year)
-    return journals
+    journals = crud_journal.get_journals(db, limit=24)
+    # Reverse the list to have the oldest month first
+    return journals[::-1]
 
 @router.put("/{year}/{month}", response_model=journal_schema.MonthlyJournal)
 def update_monthly_journal(

@@ -34,6 +34,7 @@ def upgrade() -> None:
     op.create_table('cars',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
+    sa.Column('reimbursement_rate_eur_per_kwh', sa.Numeric(precision=10, scale=5), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
@@ -48,62 +49,92 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_solar_panels_id'), 'solar_panels', ['id'], unique=False)
-    op.create_table('car_usage',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('car_id', sa.Integer(), nullable=False),
-    sa.Column('period_start', sa.Date(), nullable=False),
-    sa.Column('total_charged_kwh', sa.Float(), nullable=False),
-    sa.Column('reimbursement_rate_eur_per_kwh', sa.Numeric(precision=10, scale=5), nullable=False),
-    sa.ForeignKeyConstraint(['car_id'], ['cars.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_car_usage_id'), 'car_usage', ['id'], unique=False)
     op.drop_index(op.f('ix_investments_id'), table_name='investments')
     op.drop_table('investments')
-    op.add_column('monthly_metrics', sa.Column('grid_consumption_low_kwh', sa.Float(), nullable=True))
-    op.add_column('monthly_metrics', sa.Column('grid_consumption_high_kwh', sa.Float(), nullable=True))
-    op.add_column('monthly_metrics', sa.Column('grid_feed_in_low_kwh', sa.Float(), nullable=True))
-    op.add_column('monthly_metrics', sa.Column('grid_feed_in_high_kwh', sa.Float(), nullable=True))
-    op.drop_column('monthly_metrics', 'export_total_kwh')
-    op.drop_column('monthly_metrics', 'consumption_ev_kwh')
-    op.drop_column('monthly_metrics', 'import_high_kwh')
-    op.drop_column('monthly_metrics', 'import_low_kwh')
-    op.add_column('tariffs', sa.Column('year', sa.Integer(), nullable=False))
-    op.add_column('tariffs', sa.Column('month', sa.Integer(), nullable=False))
-    op.add_column('tariffs', sa.Column('consumption_price_low_eur_kwh', sa.Numeric(precision=10, scale=5), nullable=False))
-    op.add_column('tariffs', sa.Column('consumption_price_high_eur_kwh', sa.Numeric(precision=10, scale=5), nullable=False))
-    op.add_column('tariffs', sa.Column('feed_in_tariff_low_eur_kwh', sa.Numeric(precision=10, scale=5), nullable=False))
-    op.add_column('tariffs', sa.Column('feed_in_tariff_high_eur_kwh', sa.Numeric(precision=10, scale=5), nullable=False))
-    op.drop_column('tariffs', 'end_date')
-    op.drop_column('tariffs', 'start_date')
-    op.drop_column('tariffs', 'purchase_high_eur_kwh')
-    op.drop_column('tariffs', 'purchase_low_eur_kwh')
-    op.drop_column('tariffs', 'sale_eur_kwh')
+
+    op.rename_table('monthly_metrics', 'monthly_journal')
+
+    op.create_table('car_journal_entries',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('journal_id', sa.Integer(), nullable=False),
+    sa.Column('car_id', sa.Integer(), nullable=False),
+    sa.Column('total_charged_kwh', sa.Float(), nullable=False),
+    sa.ForeignKeyConstraint(['car_id'], ['cars.id'], ),
+    sa.ForeignKeyConstraint(['journal_id'], ['monthly_journal.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_car_journal_entries_id'), 'car_journal_entries', ['id'], unique=False)
+
+    with op.batch_alter_table('monthly_journal', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('year', sa.Integer(), nullable=False))
+        batch_op.add_column(sa.Column('month', sa.Integer(), nullable=False))
+        batch_op.add_column(sa.Column('grid_consumption_low_kwh', sa.Float(), nullable=True))
+        batch_op.add_column(sa.Column('grid_consumption_high_kwh', sa.Float(), nullable=True))
+        batch_op.add_column(sa.Column('grid_feed_in_low_kwh', sa.Float(), nullable=True))
+        batch_op.add_column(sa.Column('grid_feed_in_high_kwh', sa.Float(), nullable=True))
+        batch_op.add_column(sa.Column('consumption_price_low_eur_kwh', sa.Numeric(precision=10, scale=5), nullable=True))
+        batch_op.add_column(sa.Column('consumption_price_high_eur_kwh', sa.Numeric(precision=10, scale=5), nullable=True))
+        batch_op.add_column(sa.Column('feed_in_tariff_low_eur_kwh', sa.Numeric(precision=10, scale=5), nullable=True))
+        batch_op.add_column(sa.Column('feed_in_tariff_high_eur_kwh', sa.Numeric(precision=10, scale=5), nullable=True))
+        batch_op.add_column(sa.Column('solar_production_kwh', sa.Float(), nullable=True))
+        batch_op.alter_column('monthly_prepayment_eur', existing_type=sa.NUMERIC(precision=10, scale=2), nullable=True)
+        batch_op.alter_column('battery_charge_kwh', existing_type=sa.FLOAT(), nullable=True)
+        batch_op.alter_column('battery_discharge_kwh', existing_type=sa.FLOAT(), nullable=True)
+        batch_op.drop_column('export_total_kwh')
+        batch_op.drop_column('consumption_ev_kwh')
+        batch_op.drop_column('import_high_kwh')
+        batch_op.drop_column('import_low_kwh')
+        batch_op.drop_column('production_total_kwh')
+        batch_op.drop_column('period_start')
+        batch_op.drop_column('account_name')
+
+
+    op.drop_index(op.f('ix_tariffs_id'), table_name='tariffs')
+    op.drop_table('tariffs')
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.add_column('tariffs', sa.Column('sale_eur_kwh', sa.NUMERIC(precision=10, scale=5), nullable=False))
-    op.add_column('tariffs', sa.Column('purchase_low_eur_kwh', sa.NUMERIC(precision=10, scale=5), nullable=False))
-    op.add_column('tariffs', sa.Column('purchase_high_eur_kwh', sa.NUMERIC(precision=10, scale=5), nullable=False))
-    op.add_column('tariffs', sa.Column('start_date', sa.DATE(), nullable=False))
-    op.add_column('tariffs', sa.Column('end_date', sa.DATE(), nullable=True))
-    op.drop_column('tariffs', 'feed_in_tariff_high_eur_kwh')
-    op.drop_column('tariffs', 'feed_in_tariff_low_eur_kwh')
-    op.drop_column('tariffs', 'consumption_price_high_eur_kwh')
-    op.drop_column('tariffs', 'consumption_price_low_eur_kwh')
-    op.drop_column('tariffs', 'month')
-    op.drop_column('tariffs', 'year')
-    op.add_column('monthly_metrics', sa.Column('import_low_kwh', sa.FLOAT(), nullable=True))
-    op.add_column('monthly_metrics', sa.Column('import_high_kwh', sa.FLOAT(), nullable=True))
-    op.add_column('monthly_metrics', sa.Column('consumption_ev_kwh', sa.FLOAT(), nullable=True))
-    op.add_column('monthly_metrics', sa.Column('export_total_kwh', sa.FLOAT(), nullable=True))
-    op.drop_column('monthly_metrics', 'grid_feed_in_high_kwh')
-    op.drop_column('monthly_metrics', 'grid_feed_in_low_kwh')
-    op.drop_column('monthly_metrics', 'grid_consumption_high_kwh')
-    op.drop_column('monthly_metrics', 'grid_consumption_low_kwh')
+    op.create_table('tariffs',
+    sa.Column('id', sa.INTEGER(), nullable=False),
+    sa.Column('start_date', sa.DATE(), nullable=False),
+    sa.Column('end_date', sa.DATE(), nullable=True),
+    sa.Column('purchase_low_eur_kwh', sa.NUMERIC(precision=10, scale=5), nullable=False),
+    sa.Column('purchase_high_eur_kwh', sa.NUMERIC(precision=10, scale=5), nullable=False),
+    sa.Column('sale_eur_kwh', sa.NUMERIC(precision=10, scale=5), nullable=False),
+    sa.Column('vat_percentage', sa.NUMERIC(precision=5, scale=2), nullable=True),
+    sa.Column('fixed_roi_rate_eur_kwh', sa.NUMERIC(precision=10, scale=5), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_tariffs_id'), 'tariffs', ['id'], unique=False)
+
+    with op.batch_alter_table('monthly_journal', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('account_name', sa.VARCHAR(), nullable=False))
+        batch_op.add_column(sa.Column('period_start', sa.DATE(), nullable=False))
+        batch_op.add_column(sa.Column('production_total_kwh', sa.FLOAT(), nullable=True))
+        batch_op.add_column(sa.Column('import_low_kwh', sa.FLOAT(), nullable=True))
+        batch_op.add_column(sa.Column('import_high_kwh', sa.FLOAT(), nullable=True))
+        batch_op.add_column(sa.Column('consumption_ev_kwh', sa.FLOAT(), nullable=True))
+        batch_op.add_column(sa.Column('export_total_kwh', sa.FLOAT(), nullable=True))
+        batch_op.alter_column('monthly_prepayment_eur', existing_type=sa.NUMERIC(precision=10, scale=2), nullable=False)
+        batch_op.alter_column('battery_charge_kwh', existing_type=sa.FLOAT(), nullable=False)
+        batch_op.alter_column('battery_discharge_kwh', existing_type=sa.FLOAT(), nullable=False)
+        batch_op.drop_column('solar_production_kwh')
+        batch_op.drop_column('feed_in_tariff_high_eur_kwh')
+        batch_op.drop_column('feed_in_tariff_low_eur_kwh')
+        batch_op.drop_column('consumption_price_high_eur_kwh')
+        batch_op.drop_column('consumption_price_low_eur_kwh')
+        batch_op.drop_column('grid_feed_in_high_kwh')
+        batch_op.drop_column('grid_feed_in_low_kwh')
+        batch_op.drop_column('grid_consumption_high_kwh')
+        batch_op.drop_column('grid_consumption_low_kwh')
+        batch_op.drop_column('month')
+        batch_op.drop_column('year')
+
+    op.rename_table('monthly_journal', 'monthly_metrics')
+
     op.create_table('investments',
     sa.Column('id', sa.INTEGER(), nullable=False),
     sa.Column('description', sa.VARCHAR(), nullable=False),
@@ -114,8 +145,8 @@ def downgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_investments_id'), 'investments', ['id'], unique=False)
-    op.drop_index(op.f('ix_car_usage_id'), table_name='car_usage')
-    op.drop_table('car_usage')
+    op.drop_index(op.f('ix_car_journal_entries_id'), table_name='car_journal_entries')
+    op.drop_table('car_journal_entries')
     op.drop_index(op.f('ix_solar_panels_id'), table_name='solar_panels')
     op.drop_table('solar_panels')
     op.drop_index(op.f('ix_cars_id'), table_name='cars')

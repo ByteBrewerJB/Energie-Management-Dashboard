@@ -149,8 +149,8 @@ function renderKPIs(timeseriesData, year) {
         return;
     }
 
-    const totalNetCosts = timeseriesData.reduce((sum, data) => sum + data.financials.net_costs, 0);
-    const totalSelfSufficiency = timeseriesData.reduce((sum, data) => sum + data.energy_flow.self_sufficiency_ratio, 0);
+    const totalNetCosts = timeseriesData.reduce((sum, data) => sum + parseFloat(data.financials.net_costs || 0), 0);
+    const totalSelfSufficiency = timeseriesData.reduce((sum, data) => sum + parseFloat(data.energy_flow.self_sufficiency_ratio || 0), 0);
     const averageSelfSufficiency = totalSelfSufficiency / timeseriesData.length * 100; // as percentage
 
     kpisDiv.innerHTML = `
@@ -204,17 +204,17 @@ function renderEnergyBalanceChart(timeseriesData) {
     const datasets = [
         {
             label: 'Import (kWh)',
-            data: timeseriesData.map(d => d.energy_flow.import_total_kwh),
+            data: timeseriesData.map(d => parseFloat(d.energy_flow.import_total_kwh || 0)),
             backgroundColor: '#FF6384',
         },
         {
             label: 'Eigen Verbruik (kWh)',
-            data: timeseriesData.map(d => d.energy_flow.self_consumption_kwh),
+            data: timeseriesData.map(d => parseFloat(d.energy_flow.self_consumption_kwh || 0)),
             backgroundColor: '#36A2EB',
         },
         {
             label: 'Export (kWh)',
-            data: timeseriesData.map(d => d.metric.export_total_kwh),
+            data: timeseriesData.map(d => parseFloat(d.metric.export_total_kwh || 0)),
             backgroundColor: '#FFCE56',
         }
     ];
@@ -246,8 +246,8 @@ function renderEnergyBalanceChart(timeseriesData) {
 function renderConsumptionSplitChart(timeseriesData) {
     const ctx = document.getElementById('consumptionSplitChart').getContext('2d');
 
-    const totalHomeConsumption = timeseriesData.reduce((sum, d) => sum + d.energy_flow.home_consumption_kwh, 0);
-    const totalEvConsumption = timeseriesData.reduce((sum, d) => sum + d.metric.consumption_ev_kwh, 0);
+    const totalHomeConsumption = timeseriesData.reduce((sum, d) => sum + parseFloat(d.energy_flow.home_consumption_kwh || 0), 0);
+    const totalEvConsumption = timeseriesData.reduce((sum, d) => sum + parseFloat(d.metric.consumption_ev_kwh || 0), 0);
 
     if (consumptionSplitChartInstance) {
         consumptionSplitChartInstance.destroy();

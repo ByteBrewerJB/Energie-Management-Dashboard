@@ -67,6 +67,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial data load
     loadDataForTab('investments');
+
+    // Debug buttons
+    document.getElementById('clear-database-btn').addEventListener('click', async () => {
+        if (confirm('Are you sure you want to clear the entire database? This action cannot be undone.')) {
+            try {
+                await fetchAPI('/debug/clear-database', { method: 'POST' });
+                alert('Database cleared successfully.');
+                // Reload all tabs to show they are empty
+                loadDataForTab('investments');
+                loadDataForTab('tariffs');
+                loadDataForTab('metrics');
+            } catch (error) {
+                console.error('Failed to clear database:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+    });
+
+    document.getElementById('fill-database-btn').addEventListener('click', async () => {
+        if (confirm('Are you sure you want to fill the database with mockup data? This will overwrite existing data.')) {
+            try {
+                await fetchAPI('/debug/fill-database', { method: 'POST' });
+                alert('Database filled with mockup data successfully.');
+                // Reload all tabs to show the new data
+                loadDataForTab('investments');
+                loadDataForTab('tariffs');
+                loadDataForTab('metrics');
+            } catch (error) {
+                console.error('Failed to fill database:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+    });
 });
 
 

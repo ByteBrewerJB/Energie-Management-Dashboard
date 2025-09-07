@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.models import models
-from app.schemas.battery import BatteryCreate, BatteryUpdate
+from app.schemas.investment import BatteryInvestmentCreate
+from app.schemas.battery import BatteryUpdate
 
 
 def get(db: Session, battery_id: int) -> Optional[models.Battery]:
@@ -19,16 +20,17 @@ def get_multi(db: Session, skip: int = 0, limit: int = 100) -> List[models.Batte
     return db.query(models.Battery).offset(skip).limit(limit).all()
 
 
-def create(db: Session, *, obj_in: BatteryCreate) -> models.Battery:
+def create(db: Session, *, obj_in: BatteryInvestmentCreate) -> models.Battery:
     """
     Creates a new battery installation record.
     """
     db_obj = models.Battery(
         name=obj_in.name,
-        brand=obj_in.brand,
         purchase_date=obj_in.purchase_date,
         purchase_cost_eur=obj_in.purchase_cost_eur,
-        capacity_kwh=obj_in.capacity_kwh,
+        # Brand and capacity are not part of the simplified form
+        brand=getattr(obj_in, 'brand', None),
+        capacity_kwh=getattr(obj_in, 'capacity_kwh', 0.0)
     )
     db.add(db_obj)
     db.commit()

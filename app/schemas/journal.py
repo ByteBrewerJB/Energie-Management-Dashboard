@@ -81,3 +81,36 @@ class JournalWithStatement(BaseModel):
     """
     journal_data: MonthlyJournal
     financial_statement: MonthlyStatement
+
+
+# --- Frontend-specific Schemas ---
+
+class EnergyFlow(BaseModel):
+    """
+    Schema for the calculated energy flow metrics required by the frontend.
+    """
+    self_consumption_kwh: Decimal
+    total_household_consumption_kwh: Decimal
+    home_consumption_kwh: Decimal
+    self_sufficiency_ratio: Decimal
+    total_grid_feed_in_kwh: Decimal
+    # The frontend expects import_total_kwh, so we need to calculate it.
+    # This can be derived from the journal data.
+    import_total_kwh: Decimal
+
+
+class Financials(BaseModel):
+    """
+    Schema for the calculated financial metrics required by the frontend.
+    This is a subset of the full MonthlyStatement.
+    """
+    net_costs: Decimal
+
+
+class FrontendChartData(BaseModel):
+    """
+    The specific nested structure expected by the dashboard frontend.
+    """
+    metric: MonthlyJournal
+    financials: Financials
+    energy_flow: EnergyFlow

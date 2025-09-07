@@ -16,16 +16,23 @@ def calculate_monthly_statement(journal: models.MonthlyJournal) -> journal_schem
         A MonthlyStatement schema object with the calculated financial results.
     """
     # --- 1. Calculate Energy Costs & Revenue ---
-    grid_consumption_low_kwh = Decimal(journal.grid_consumption_low_kwh)
-    grid_consumption_high_kwh = Decimal(journal.grid_consumption_high_kwh)
-    grid_feed_in_low_kwh = Decimal(journal.grid_feed_in_low_kwh)
-    grid_feed_in_high_kwh = Decimal(journal.grid_feed_in_high_kwh)
+    # Default None values to 0 to prevent TypeErrors in calculations
+    grid_consumption_low_kwh = Decimal(journal.grid_consumption_low_kwh or 0)
+    grid_consumption_high_kwh = Decimal(journal.grid_consumption_high_kwh or 0)
+    grid_feed_in_low_kwh = Decimal(journal.grid_feed_in_low_kwh or 0)
+    grid_feed_in_high_kwh = Decimal(journal.grid_feed_in_high_kwh or 0)
 
-    total_consumption_cost = (grid_consumption_low_kwh * journal.consumption_price_low_eur_kwh) + \
-                             (grid_consumption_high_kwh * journal.consumption_price_high_eur_kwh)
+    price_low = Decimal(journal.consumption_price_low_eur_kwh or 0)
+    price_high = Decimal(journal.consumption_price_high_eur_kwh or 0)
+    feed_in_low = Decimal(journal.feed_in_tariff_low_eur_kwh or 0)
+    feed_in_high = Decimal(journal.feed_in_tariff_high_eur_kwh or 0)
 
-    total_feed_in_revenue = (grid_feed_in_low_kwh * journal.feed_in_tariff_low_eur_kwh) + \
-                              (grid_feed_in_high_kwh * journal.feed_in_tariff_high_eur_kwh)
+
+    total_consumption_cost = (grid_consumption_low_kwh * price_low) + \
+                             (grid_consumption_high_kwh * price_high)
+
+    total_feed_in_revenue = (grid_feed_in_low_kwh * feed_in_low) + \
+                              (grid_feed_in_high_kwh * feed_in_high)
 
     net_energy_cost = total_consumption_cost - total_feed_in_revenue
 
@@ -44,8 +51,8 @@ def calculate_monthly_statement(journal: models.MonthlyJournal) -> journal_schem
     # Settlement = (total_feed_in_revenue + total_car_reimbursement) - (total_consumption_cost + journal.monthly_prepayment_eur)
     # Rearranging: (total_feed_in_revenue - total_consumption_cost) + total_car_reimbursement - monthly_prepayment_eur
     # Which is: -net_energy_cost + total_car_reimbursement - monthly_prepayment_eur
-
-    final_settlement = total_car_reimbursement - net_energy_cost - journal.monthly_prepayment_eur
+    monthly_prepayment = Decimal(journal.monthly_prepayment_eur or 0)
+    final_settlement = total_car_reimbursement - net_energy_cost - monthly_prepayment
 
     # --- 4. Assemble the Statement ---
     statement = journal_schema.MonthlyStatement(

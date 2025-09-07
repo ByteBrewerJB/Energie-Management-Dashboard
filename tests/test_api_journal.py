@@ -51,9 +51,12 @@ def test_get_journals_for_year_creates_entries(db_session):
     data = response.json()
     assert len(data) == 12
     for month_data in data:
-        assert month_data["year"] == 2025
-        assert month_data["solar_production_kwh"] is None
-        assert month_data["id"] is not None
+        assert month_data["metric"]["year"] == 2025
+        assert month_data["metric"]["solar_production_kwh"] is None
+        assert month_data["metric"]["id"] is not None
+        # Also check that the calculated fields are present
+        assert "financials" in month_data
+        assert "energy_flow" in month_data
 
 def test_update_journal_entry(db_session):
     """
@@ -85,7 +88,7 @@ def test_update_journal_entry(db_session):
     # Verify the data is persisted by fetching it again
     response_get = client.get("/api/metrics/2026")
     all_months = response_get.json()
-    may_data = next((m for m in all_months if m["month"] == 5), None)
+    may_data = next((m["metric"] for m in all_months if m["metric"]["month"] == 5), None)
     assert may_data is not None
     assert may_data["solar_production_kwh"] == 300.2
 
@@ -113,11 +116,11 @@ def test_get_journals_for_year_returns_existing(db_session):
     assert len(data) == 12
 
     # Check the updated month
-    march_data = next((m for m in data if m["month"] == 3), None)
+    march_data = next((m["metric"] for m in data if m["metric"]["month"] == 3), None)
     assert march_data is not None
     assert march_data["solar_production_kwh"] == 555.5
 
     # Check a different month to ensure it's still empty
-    april_data = next((m for m in data if m["month"] == 4), None)
+    april_data = next((m["metric"] for m in data if m["metric"]["month"] == 4), None)
     assert april_data is not None
     assert april_data["solar_production_kwh"] is None

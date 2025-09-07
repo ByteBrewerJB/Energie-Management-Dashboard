@@ -49,6 +49,11 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_solar_panels_id'), 'solar_panels', ['id'], unique=False)
+    op.drop_index(op.f('ix_investments_id'), table_name='investments')
+    op.drop_table('investments')
+
+    op.rename_table('monthly_metrics', 'monthly_journal')
+
     op.create_table('car_journal_entries',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('journal_id', sa.Integer(), nullable=False),
@@ -59,10 +64,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_car_journal_entries_id'), 'car_journal_entries', ['id'], unique=False)
-    op.drop_index(op.f('ix_investments_id'), table_name='investments')
-    op.drop_table('investments')
 
-    op.rename_table('monthly_metrics', 'monthly_journal')
     with op.batch_alter_table('monthly_journal', schema=None) as batch_op:
         batch_op.add_column(sa.Column('year', sa.Integer(), nullable=False))
         batch_op.add_column(sa.Column('month', sa.Integer(), nullable=False))

@@ -20,3 +20,6 @@ python-multipart
 
 # Templating
 Jinja2
+
+# Logging
+python-json-logger

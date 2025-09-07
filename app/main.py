@@ -1,6 +1,8 @@
+import logging
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from app.core.logging_config import setup_logging
 
 from app.api.endpoints import (
     analysis,
@@ -19,6 +21,24 @@ app = FastAPI(
     description="Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbruik.",
     version="1.0.0"
 )
+
+# Call setup_logging on startup
+@app.on_event("startup")
+async def startup_event():
+    setup_logging()
+
+# Middleware to log requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger = logging.getLogger("joulejournal.request")
+    logger.info(f"Incoming request: {request.method} {request.url.path}", extra={
+        "method": request.method,
+        "path": request.url.path,
+        "client_host": request.client.host,
+        "client_port": request.client.port,
+    })
+    response = await call_next(request)
+    return response
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")

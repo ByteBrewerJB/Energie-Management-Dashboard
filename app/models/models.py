@@ -48,6 +48,23 @@ class Car(Base):
     journal_entries = relationship("CarJournalEntry", back_populates="car")
 
 
+class Tariff(Base):
+    """
+    SQLAlchemy model for a tariff.
+    Represents a contract with an energy provider.
+    """
+    __tablename__ = "tariffs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
+    purchase_low_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    purchase_high_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    sale_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    vat_percentage = Column(Numeric(5, 2), nullable=False)
+    fixed_roi_rate_eur_kwh = Column(Numeric(10, 5), nullable=True)
+
+
 # --- Monthly Journaling Models ---
 
 class MonthlyJournal(Base):

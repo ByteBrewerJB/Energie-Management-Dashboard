@@ -80,8 +80,15 @@ async function fetchAPI(endpoint, options = {}) {
         throw new Error('Unauthorized');
     }
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || `API Error (${response.status})`);
+        try {
+            const errorData = await response.json();
+            const errorMessage = typeof errorData.detail === 'string'
+                ? errorData.detail
+                : JSON.stringify(errorData.detail, null, 2);
+            throw new Error(errorMessage || `API Error (${response.status})`);
+        } catch (e) {
+            throw new Error(`API Error (${response.status}): ${response.statusText}`);
+        }
     }
     if (response.status === 204 || response.headers.get("content-length") === "0") {
         return null;

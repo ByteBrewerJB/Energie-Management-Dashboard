@@ -8,7 +8,7 @@ fake = Faker()
 
 def fill_database_with_mock_data(db: Session):
     """
-    Fill the database with mockup data for the last 2.5 years.
+    Fill the database with mockup data for the last 2 years.
     """
     # Create one-time installations
     solar_panel = models.SolarPanel(
@@ -47,8 +47,8 @@ def fill_database_with_mock_data(db: Session):
         )
         db.add(tariff)
 
-    # Create monthly journal entries for the last 30 months
-    for i in range(30):
+    # Create monthly journal entries for the last 24 months
+    for i in range(24):
         month_date = today - timedelta(days=i * 30)
         journal_entry = models.MonthlyJournal(
             year=month_date.year,

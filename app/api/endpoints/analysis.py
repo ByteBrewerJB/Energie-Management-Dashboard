@@ -18,23 +18,6 @@ def get_timeseries_analysis(
 ):
     """
     Performs a time-series analysis of energy and financial data.
-
-    This endpoint retrieves all monthly metrics within a specified date range,
-    calculates the corresponding energy flow and financial results for each
-    month, and returns a comprehensive analysis.
-
-    Args:
-        db: The database session dependency.
-        start_date: The start date for the analysis period (inclusive).
-        end_date: The end date for the analysis period (inclusive).
-
-    Returns:
-        A list of MonthlyAnalysisResult objects, each containing the metric,
-        energy flow, and financial data for a single month.
-
-    Raises:
-        HTTPException: 404 Not Found if no metrics or no active tariff are
-                       found for the specified period.
     """
     metrics = crud_analysis.get_metrics_for_period(db, start_date, end_date)
     if not metrics:
@@ -43,14 +26,15 @@ def get_timeseries_analysis(
     results: List[Any] = []
 
     for metric in metrics:
-        tariff = crud_tariffs.get_active_tariff(db, on_date=metric.period_start)
+        # Use the new function to get tariff by year and month
+        tariff = crud_tariffs.get_by_year_and_month(db, year=metric.period_start.year, month=metric.period_start.month)
         if not tariff:
-            # Or handle this case as you see fit, maybe skip the month or use a default tariff
-            raise HTTPException(status_code=404, detail=f"No active tariff found for date {metric.period_start}")
+            # Skip months without a tariff, or raise an error. Skipping is more robust.
+            continue
 
-
+        # Use the new, refactored service functions
         energy_flow_data = energy_calculations.calculate_energy_flow(metric)
-        financial_data = financial_calculations.calculate_financials(metric, tariff)
+        financial_data = financial_calculations.calculate_energy_financials(metric, tariff)
 
         results.append({
             "metric": metric,

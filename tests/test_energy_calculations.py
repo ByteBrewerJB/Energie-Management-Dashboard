@@ -1,30 +1,80 @@
 import pytest
+from decimal import Decimal
 from app.models.models import MonthlyMetric
 from app.services.energy_calculations import calculate_energy_flow
 
-def test_calculate_energy_flow_with_battery():
-    # Arrange
+@pytest.fixture
+def sample_metric():
+    """Provides a sample MonthlyMetric object for testing."""
+    return MonthlyMetric(
+        production_total_kwh=1000.0,
+        grid_feed_in_low_kwh=300.0,
+        grid_feed_in_high_kwh=100.0,
+        grid_consumption_low_kwh=100.0,
+        grid_consumption_high_kwh=50.0,
+        battery_charge_kwh=200.0,
+        battery_discharge_kwh=180.0
+    )
+
+def test_calculate_energy_flow(sample_metric):
+    """
+    Tests the calculate_energy_flow function with a sample metric.
+    """
+    # Act
+    result = calculate_energy_flow(sample_metric)
+
+    # Assert
+    # Total grid feed in = 300 + 100 = 400
+    # Self-consumption = Production - Total Grid Feed In = 1000 - 400 = 600
+    # Total consumption = Grid Consumption + Self-consumption = (100 + 50) + 600 = 750
+    # Home consumption = Total Consumption - Battery Charge = 750 - 200 = 550
+    # Self-sufficiency = Self-consumption / Total Consumption = 600 / 750 = 0.8
+
+    assert result["total_grid_feed_in_kwh"] == Decimal('400.0')
+    assert result["self_consumption_kwh"] == Decimal('600.0')
+    assert result["total_consumption_kwh"] == Decimal('750.0')
+    assert result["home_consumption_kwh"] == Decimal('550.0')
+    assert result["self_sufficiency_ratio"] == Decimal('0.8')
+
+def test_calculate_energy_flow_no_consumption(sample_metric):
+    """
+    Tests the case where there is no grid consumption.
+    """
+    sample_metric.grid_consumption_low_kwh = 0.0
+    sample_metric.grid_consumption_high_kwh = 0.0
+
+    # Act
+    result = calculate_energy_flow(sample_metric)
+
+    # Assert
+    # Total grid feed in = 400
+    # Self-consumption = 1000 - 400 = 600
+    # Total consumption = 0 + 600 = 600
+    # Home consumption = 600 - 200 = 400
+    # Self-sufficiency = 600 / 600 = 1.0
+    assert result["total_consumption_kwh"] == Decimal('600.0')
+    assert result["home_consumption_kwh"] == Decimal('400.0')
+    assert result["self_sufficiency_ratio"] == Decimal('1.0')
+
+def test_calculate_energy_flow_no_production():
+    """
+    Tests the case where there is no production.
+    """
     metric = MonthlyMetric(
-        production_total_kwh=1000,
-        export_total_kwh=400,
-        import_low_kwh=100,
-        import_high_kwh=50,
-        consumption_ev_kwh=150,
-        battery_charge_kwh=200,
-        battery_discharge_kwh=180  # Discharge doesn't affect this calculation
+        production_total_kwh=0.0,
+        grid_feed_in_low_kwh=0.0,
+        grid_feed_in_high_kwh=0.0,
+        grid_consumption_low_kwh=100.0,
+        grid_consumption_high_kwh=50.0,
+        battery_charge_kwh=0.0,
+        battery_discharge_kwh=0.0
     )
 
     # Act
     result = calculate_energy_flow(metric)
 
     # Assert
-    # Self-consumption = Production - Export = 1000 - 400 = 600
-    # Total consumption = Import_Low + Import_High + Self-consumption
-    #                   = 100 + 50 + 600 = 750
-    # Expected home consumption (buggy) = Total Consumption - EV Consumption
-    #                                   = 750 - 150 = 600
-    # Expected home consumption (fixed) = Total Consumption - EV Consumption - Battery Charge
-    #                                   = 750 - 150 - 200 = 400
-
-    # This assertion should fail before the fix
-    assert result['home_consumption_kwh'] == 400
+    assert result["self_consumption_kwh"] == Decimal('0.0')
+    assert result["total_consumption_kwh"] == Decimal('150.0')
+    assert result["home_consumption_kwh"] == Decimal('150.0')
+    assert result["self_sufficiency_ratio"] == Decimal('0.0')

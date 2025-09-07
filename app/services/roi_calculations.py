@@ -1,71 +1,137 @@
 from sqlalchemy.orm import Session
-from app.crud import crud_investments, crud_metrics, crud_tariffs
+from decimal import Decimal
+
+from app.crud import (
+    crud_solar_panel,
+    crud_battery,
+    crud_metrics,
+    crud_tariffs,
+)
 from app.services import energy_calculations, financial_calculations
-from app.schemas.roi import ROIStatus, ROIMethodResult
-from app.models.models import Investment, MonthlyMetric, Tariff
+from app.schemas.roi import ROIMethodResult, ROIStatus
 
-
-def calculate_roi_status(db: Session, investment_id: int) -> ROIStatus:
+def calculate_solar_panel_roi(db: Session, solar_panel_id: int) -> ROIStatus:
     """
-    Calculates the Return on Investment (ROI) status for a given investment.
+    Calculates the Return on Investment (ROI) status for a solar panel installation.
 
-    This function calculates ROI using two different methods:
-    Method 1: Based on avoided costs and export revenue.
-    Method 2: Based on a fixed rate per kWh produced.
+    The ROI is based on the actual savings generated, which consist of:
+    1.  Avoided Costs: Value of self-consumed solar energy.
+    2.  Export Revenue: Money earned from selling surplus energy to the grid.
 
     Args:
         db: The database session.
-        investment_id: The ID of the investment to calculate the ROI for.
+        solar_panel_id: The ID of the solar panel installation.
 
     Returns:
-        An ROIStatus object containing the results of both calculation methods.
-        Returns None if the investment is not found.
+        An ROIStatus object containing the ROI calculation. Returns None if the
+        installation is not found.
     """
-    investment = crud_investments.get(db, investment_id)
-    if not investment:
+    solar_panel = crud_solar_panel.get(db, solar_panel_id)
+    if not solar_panel:
         return None
 
-    metrics = crud_metrics.get_metrics_by_investment(db, investment_id=investment_id, start_date=investment.installation_date)
+    # Fetch all metrics since the installation date
+    metrics = db.query(crud_metrics.models.MonthlyMetric).filter(
+        crud_metrics.models.MonthlyMetric.period_start >= solar_panel.purchase_date
+    ).order_by(crud_metrics.models.MonthlyMetric.period_start.asc()).all()
 
-    cumulative_savings_m1 = 0.0
-    cumulative_savings_m2 = 0.0
+    cumulative_savings = Decimal(0.0)
 
     for metric in metrics:
-        tariff = crud_tariffs.get_active_tariff(db, on_date=metric.period_start)
+        tariff = crud_tariffs.get_by_year_and_month(db, year=metric.period_start.year, month=metric.period_start.month)
         if not tariff:
             continue
 
-        # Method 1
         energy_flow = energy_calculations.calculate_energy_flow(metric)
-        financials = financial_calculations.calculate_financials(metric, tariff)
-        avoided_costs = energy_flow['self_consumption_kwh'] * float(tariff.purchase_high_eur_kwh)
-        revenue = float(financials['export_revenue_ex_vat'])
-        monthly_value_m1 = avoided_costs + revenue
-        cumulative_savings_m1 += monthly_value_m1
+        self_consumption = energy_flow["self_consumption_kwh"]
 
-        # Method 2
-        if tariff.fixed_roi_rate_eur_kwh:
-            monthly_value_m2 = metric.production_total_kwh * float(tariff.fixed_roi_rate_eur_kwh)
-            cumulative_savings_m2 += monthly_value_m2
+        # Calculate the average price of electricity for the month to value the avoided cost
+        total_consumption_kwh = metric.grid_consumption_low_kwh + metric.grid_consumption_high_kwh
+        if total_consumption_kwh > 0:
+            avg_consumption_price = (
+                (Decimal(metric.grid_consumption_low_kwh) * tariff.consumption_price_low_eur_kwh) +
+                (Decimal(metric.grid_consumption_high_kwh) * tariff.consumption_price_high_eur_kwh)
+            ) / Decimal(total_consumption_kwh)
+        else:
+            # If no grid consumption, use the high tariff as a fallback for valuing self-consumption
+            avg_consumption_price = tariff.consumption_price_high_eur_kwh
 
-    total_cost = float(investment.total_cost_eur)
+        avoided_costs = self_consumption * avg_consumption_price
 
-    # Results for Method 1
-    remaining_balance_m1 = total_cost - cumulative_savings_m1
-    progress_percentage_m1 = (cumulative_savings_m1 / total_cost) * 100 if total_cost > 0 else 0
-    result_m1 = ROIMethodResult(
-        cumulative_savings=cumulative_savings_m1,
-        remaining_balance=remaining_balance_m1,
-        progress_percentage=progress_percentage_m1
+        # Get revenue from new financial calculation
+        financials = financial_calculations.calculate_energy_financials(metric, tariff)
+        export_revenue = financials["total_feed_in_revenue_eur"]
+
+        monthly_savings = avoided_costs + export_revenue
+        cumulative_savings += monthly_savings
+
+    total_cost = Decimal(solar_panel.purchase_cost_eur)
+    remaining_balance = total_cost - cumulative_savings
+    progress_percentage = (cumulative_savings / total_cost) * 100 if total_cost > 0 else 0
+
+    result = ROIMethodResult(
+        cumulative_savings=float(cumulative_savings),
+        remaining_balance=float(remaining_balance),
+        progress_percentage=float(progress_percentage)
     )
 
-    # Results for Method 2
-    remaining_balance_m2 = total_cost - cumulative_savings_m2
-    progress_percentage_m2 = (cumulative_savings_m2 / total_cost) * 100 if total_cost > 0 else 0
-    result_m2 = ROIMethodResult(
-        cumulative_savings=cumulative_savings_m2,
-        remaining_balance=remaining_balance_m2,
-        progress_percentage=progress_percentage_m2
+    # For this refactored version, we only have one method, but ROIStatus expects two.
+    # We can return the same result for both, or a null result for the second.
+    return ROIStatus(method_1=result, method_2=ROIMethodResult(cumulative_savings=0, remaining_balance=0, progress_percentage=0))
+
+
+def calculate_battery_roi(db: Session, battery_id: int) -> ROIStatus:
+    """
+    Calculates the Return on Investment (ROI) for a battery installation.
+
+    The ROI is based on the savings from energy arbitrage: charging the battery
+    when electricity is cheap and discharging it when it is expensive, thus
+
+    avoiding the cost of high-tariff electricity.
+
+    Args:
+        db: The database session.
+        battery_id: The ID of the battery installation.
+
+    Returns:
+        An ROIStatus object containing the ROI calculation. Returns None if the
+        installation is not found.
+    """
+    battery = crud_battery.get(db, battery_id)
+    if not battery:
+        return None
+
+    metrics = db.query(crud_metrics.models.MonthlyMetric).filter(
+        crud_metrics.models.MonthlyMetric.period_start >= battery.purchase_date
+    ).order_by(crud_metrics.models.MonthlyMetric.period_start.asc()).all()
+
+    cumulative_savings = Decimal(0.0)
+
+    for metric in metrics:
+        tariff = crud_tariffs.get_by_year_and_month(db, year=metric.period_start.year, month=metric.period_start.month)
+        if not tariff:
+            continue
+
+        # The value is generated by discharging the battery when prices are high.
+        # We assume the energy discharged avoids a high-tariff purchase.
+        avoided_cost = Decimal(metric.battery_discharge_kwh or 0) * tariff.consumption_price_high_eur_kwh
+
+        # The cost of charging the battery. We assume it's charged at low-tariff times.
+        charge_cost = Decimal(metric.battery_charge_kwh or 0) * tariff.consumption_price_low_eur_kwh
+
+        # This simplification doesn't account for charging with "free" solar.
+        # A more advanced model would be needed for that.
+        monthly_savings = avoided_cost - charge_cost
+        cumulative_savings += monthly_savings
+
+    total_cost = Decimal(battery.purchase_cost_eur)
+    remaining_balance = total_cost - cumulative_savings
+    progress_percentage = (cumulative_savings / total_cost) * 100 if total_cost > 0 else 0
+
+    result = ROIMethodResult(
+        cumulative_savings=float(cumulative_savings),
+        remaining_balance=float(remaining_balance),
+        progress_percentage=float(progress_percentage)
     )
 
-    return ROIStatus(method_1=result_m1, method_2=result_m2)
+    return ROIStatus(method_1=result, method_2=ROIMethodResult(cumulative_savings=0, remaining_balance=0, progress_percentage=0))

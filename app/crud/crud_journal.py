@@ -49,6 +49,11 @@ def remove_journal(db: Session, *, journal_id: int) -> Optional[models.MonthlyJo
     return db_obj
 
 
+def get_journals_by_year(db: Session, *, year: int) -> List[models.MonthlyJournal]:
+    """
+    Retrieves all journal entries for a specific year.
+    """
+    return db.query(models.MonthlyJournal).filter(models.MonthlyJournal.year == year).all()
 
 
 def update_journal(db: Session, *, year: int, month: int, obj_in: journal_schema.MonthlyJournalBase) -> Optional[models.MonthlyJournal]:

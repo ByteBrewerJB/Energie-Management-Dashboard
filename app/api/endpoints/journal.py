@@ -22,7 +22,7 @@ def read_journals_for_year(
     Retrieve all monthly journal entries for a specific year, run calculations,
     and return the data in the format expected by the frontend.
     """
-    db_journals = crud_journal.get_or_create_journals_for_year(db, year=year)
+    db_journals = crud_journal.get_journals_by_year(db, year=year)
 
     response_data = []
     for journal in db_journals:

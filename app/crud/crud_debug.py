@@ -47,10 +47,10 @@ def fill_database_with_mock_data(db: Session):
         )
         db.add(tariff)
 
-    # Create monthly journal entries for the last 24 months
+    # Create monthly journal entries for the last 30 months
     current_year = today.year
     current_month = today.month
-    for i in range(24):
+    for i in range(30):
         year = current_year
         month = current_month - i
         while month <= 0:

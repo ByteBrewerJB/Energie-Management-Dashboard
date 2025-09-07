@@ -35,6 +35,7 @@
                     <button class="tab-link active" data-tab="investments">Investments</button>
                     <button class="tab-link" data-tab="tariffs">Tariffs</button>
                     <button class="tab-link" data-tab="metrics">Monthly Metrics</button>
+                    <button class="tab-link" data-tab="debug">Debug</button>
                 </div>
 
                 <div id="investments" class="tab-content active">
@@ -63,6 +64,14 @@
                         <select id="metric-year-selector"></select>
                     </div>
                     <div id="metrics-table-container"></div>
+                </div>
+
+                <div id="debug" class="tab-content">
+                    <h2>Debug Tools</h2>
+                    <div class="toolbar">
+                        <button id="clear-database-btn" class="btn-danger">Clear Database</button>
+                        <button id="fill-database-btn" class="btn-primary">Fill Database with Mockup Data</button>
+                    </div>
                 </div>
             </main>
 

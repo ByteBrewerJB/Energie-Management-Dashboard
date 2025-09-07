@@ -47,3 +47,35 @@ def remove_journal(db: Session, *, journal_id: int) -> Optional[models.MonthlyJo
         db.delete(db_obj)
         db.commit()
     return db_obj
+
+
+def get_or_create_journals_for_year(db: Session, *, year: int) -> List[models.MonthlyJournal]:
+    """
+    Retrieves all 12 monthly journals for a given year.
+    If a journal for a specific month does not exist, it creates an empty one.
+    """
+    journals = []
+    for month in range(1, 13):
+        journal = get_journal_by_year_and_month(db, year=year, month=month)
+        if not journal:
+            journal_in = journal_schema.MonthlyJournalCreate(year=year, month=month)
+            journal = create_journal(db=db, obj_in=journal_in)
+        journals.append(journal)
+    # Sort journals by month
+    journals.sort(key=lambda j: j.month)
+    return journals
+
+
+def update_journal(db: Session, *, year: int, month: int, obj_in: journal_schema.MonthlyJournalBase) -> Optional[models.MonthlyJournal]:
+    """
+    Updates a monthly journal record.
+    """
+    journal = get_journal_by_year_and_month(db, year=year, month=month)
+    if journal:
+        update_data = obj_in.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(journal, field, value)
+        db.add(journal)
+        db.commit()
+        db.refresh(journal)
+    return journal

@@ -22,18 +22,18 @@ class CarJournalEntry(CarJournalEntryBase):
 class MonthlyJournalBase(BaseModel):
     year: int
     month: int
-    grid_consumption_low_kwh: float
-    grid_consumption_high_kwh: float
-    grid_feed_in_low_kwh: float
-    grid_feed_in_high_kwh: float
-    consumption_price_low_eur_kwh: Decimal
-    consumption_price_high_eur_kwh: Decimal
-    feed_in_tariff_low_eur_kwh: Decimal
-    feed_in_tariff_high_eur_kwh: Decimal
-    solar_production_kwh: float
-    battery_charge_kwh: Optional[float] = 0.0
-    battery_discharge_kwh: Optional[float] = 0.0
-    monthly_prepayment_eur: Decimal
+    grid_consumption_low_kwh: Optional[float] = None
+    grid_consumption_high_kwh: Optional[float] = None
+    grid_feed_in_low_kwh: Optional[float] = None
+    grid_feed_in_high_kwh: Optional[float] = None
+    consumption_price_low_eur_kwh: Optional[Decimal] = None
+    consumption_price_high_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_low_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_high_eur_kwh: Optional[Decimal] = None
+    solar_production_kwh: Optional[float] = None
+    battery_charge_kwh: Optional[float] = None
+    battery_discharge_kwh: Optional[float] = None
+    monthly_prepayment_eur: Optional[Decimal] = None
 
 class MonthlyJournalCreate(MonthlyJournalBase):
     car_entries: List[CarJournalEntryCreate] = []

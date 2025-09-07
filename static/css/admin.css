@@ -1,8 +1,8 @@
-/* admin.css - Dark Theme */
+/* admin.css - Themed for Light/Dark Mode */
 body {
     font-family: Arial, sans-serif;
-    background-color: #1A202C;
-    color: #F7FAFC;
+    background-color: var(--background-color);
+    color: var(--primary-text-color);
     margin: 0;
 }
 
@@ -12,15 +12,15 @@ body {
 }
 
 .sidebar {
-    background-color: #2D3748;
-    color: #F7FAFC;
+    background-color: var(--surface-color);
+    color: var(--primary-text-color);
     width: 250px;
     padding: 20px;
-    border-right: 1px solid #4A5568;
+    border-right: 1px solid var(--border-color);
 }
 
 .sidebar h2 {
-    color: #fff;
+    color: var(--primary-text-color);
     text-align: center;
 }
 
@@ -40,8 +40,8 @@ body {
     display: block;
     width: 100%;
     padding: 10px;
-    background-color: #4A5568;
-    color: #F7FAFC;
+    background-color: var(--border-color);
+    color: var(--primary-text-color);
     text-decoration: none;
     border-radius: 4px;
     border: none;
@@ -52,7 +52,8 @@ body {
 
 .sidebar nav ul li a:hover,
 .sidebar nav ul li button:hover {
-    background-color: #38A169; /* Accent color from main theme */
+    background-color: var(--accent-color);
+    color: white;
 }
 
 
@@ -62,8 +63,8 @@ body {
     overflow-y: auto; /* Allow scrolling for content */
 }
 
-header h1 {
-    border-bottom: 1px solid #4A5568;
+.content header h1 {
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
     margin-bottom: 20px;
 }
@@ -76,29 +77,29 @@ table {
 
 th, td {
     padding: 12px 15px;
-    border: 1px solid #4A5568;
+    border: 1px solid var(--border-color);
     text-align: left;
 }
 
 th {
-    background-color: #2D3748;
-    color: #F7FAFC;
+    background-color: var(--surface-color);
+    color: var(--primary-text-color);
     font-weight: bold;
 }
 
 tr:nth-child(even) {
-    background-color: #2D3748; /* Striped rows */
+    background-color: var(--surface-color); /* Striped rows */
 }
 
 tr:hover {
-    background-color: #4A5568;
+    background-color: var(--border-color);
 }
 
 /* Tabs */
 .tabs .tab-link {
-    background-color: #2D3748;
-    color: #F7FAFC;
-    border: 1px solid #4A5568;
+    background-color: var(--surface-color);
+    color: var(--primary-text-color);
+    border: 1px solid var(--border-color);
     padding: 10px 15px;
     cursor: pointer;
     margin-right: 5px;
@@ -107,14 +108,15 @@ tr:hover {
 }
 
 .tabs .tab-link.active {
-    background-color: #38A169;
-    border-color: #38A169;
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
 }
 
 .tab-content {
     display: none;
     padding: 20px;
-    border: 1px solid #4A5568;
+    border: 1px solid var(--border-color);
     border-top: none;
     border-radius: 0 0 4px 4px;
 }
@@ -125,7 +127,7 @@ tr:hover {
 
 /* Buttons */
 .add-new-btn, .edit-btn, .delete-btn {
-    background-color: #38A169;
+    background-color: var(--accent-color);
     color: white;
     padding: 8px 12px;
     border: none;
@@ -134,16 +136,16 @@ tr:hover {
     margin-bottom: 10px;
 }
 
-.add-new-btn:hover, .edit-btn:hover, .delete-btn:hover {
-    background-color: #48BB78;
+.add-new-btn:hover, .edit-btn:hover {
+    background-color: var(--accent-color-hover);
 }
 
 .delete-btn {
-    background-color: #C53030; /* Error color from light theme */
+    background-color: var(--error-color);
 }
 
 .delete-btn:hover {
-    background-color: #E53E3E;
+    opacity: 0.8;
 }
 
 
@@ -161,10 +163,10 @@ tr:hover {
 }
 
 .modal-content {
-    background-color: #2D3748;
+    background-color: var(--surface-color);
     margin: 10% auto;
     padding: 20px;
-    border: 1px solid #4A5568;
+    border: 1px solid var(--border-color);
     width: 80%;
     max-width: 500px;
     border-radius: 8px;
@@ -172,7 +174,7 @@ tr:hover {
 }
 
 .close-btn {
-    color: #A0AEC0;
+    color: var(--secondary-text-color);
     position: absolute;
     top: 10px;
     right: 20px;
@@ -189,7 +191,7 @@ tr:hover {
 #modal-form label {
     display: block;
     margin-bottom: 5px;
-    color: #A0AEC0;
+    color: var(--secondary-text-color);
 }
 
 #modal-form input[type="text"],
@@ -197,14 +199,14 @@ tr:hover {
 #modal-form input[type="number"] {
     width: 100%;
     padding: 8px;
-    background-color: #1A202C;
-    border: 1px solid #4A5568;
-    color: #F7FAFC;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--primary-text-color);
     border-radius: 4px;
 }
 
 #modal-form button[type="submit"] {
-    background-color: #38A169;
+    background-color: var(--accent-color);
     color: white;
     padding: 10px 15px;
     border: none;
@@ -215,5 +217,77 @@ tr:hover {
 }
 
 #modal-form button[type="submit"]:hover {
-    background-color: #48BB78;
+    background-color: var(--accent-color-hover);
+}
+
+/* Toolbar for metrics tab */
+.toolbar {
+    margin-bottom: 20px;
+}
+
+.toolbar label {
+    margin-right: 10px;
+}
+
+.toolbar select {
+    padding: 5px;
+    background-color: var(--surface-color);
+    color: var(--primary-text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* Editable table for metrics */
+.editable-table input {
+    width: 95%;
+    padding: 6px;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--primary-text-color);
+    border-radius: 4px;
+}
+
+.editable-table .save-metric-btn {
+    background-color: #3182CE; /* Blue - keeping this distinct */
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.editable-table .save-metric-btn:hover {
+    background-color: #4299E1;
+}
+
+.editable-table .save-metric-btn:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+}
+
+
+/* Row styling for completeness */
+tr.complete {
+    background-color: rgba(49, 130, 90, 0.3) !important;
+}
+
+tr.incomplete {
+    background-color: rgba(197, 48, 48, 0.3) !important;
+}
+
+body.light-mode tr.complete {
+    background-color: rgba(72, 187, 120, 0.2) !important;
+}
+
+body.light-mode tr.incomplete {
+    background-color: rgba(229, 62, 62, 0.2) !important;
+}
+
+tr.success-flash {
+    animation: success-flash 1.5s ease-out;
+}
+
+@keyframes success-flash {
+    0% { background-color: rgba(49, 130, 90, 0.8) !important; }
+    100% { background-color: transparent; }
 }

@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Tab navigation
     const tabs = document.querySelectorAll('.tab-link');
-    const tabContents = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const targetTab = tab.dataset.tab;
@@ -26,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Modal setup
+    // Modal setup for non-metric forms
     const modal = document.getElementById('form-modal');
     const closeBtn = document.querySelector('.close-btn');
     closeBtn.addEventListener('click', () => modal.style.display = 'none');
@@ -37,25 +36,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('modal-form').addEventListener('submit', handleFormSubmit);
 
-    // Event listeners for "Add New" buttons
+    // Event listeners for "Add New" buttons (non-metric)
     document.querySelectorAll('.add-new-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             openFormModal(e.target.dataset.model);
         });
     });
 
-    // Delegated event listeners for table actions
+    // Delegated event listeners for table actions (non-metric)
     document.querySelector('main').addEventListener('click', e => {
-        const button = e.target;
-        const model = button.closest('.tab-content')?.id;
-        if (!model) return;
+        if (e.target.matches('.edit-btn, .delete-btn')) {
+            const button = e.target;
+            const model = button.closest('.tab-content')?.id;
+            if (!model || model === 'metrics') return;
 
-        const id = button.dataset.id;
-        if (button.classList.contains('edit-btn')) {
-            openFormModal(model.slice(0, -1), id); // e.g., "investments" -> "investment"
-        }
-        if (button.classList.contains('delete-btn')) {
-            handleDelete(model.slice(0, -1), id);
+            const id = button.dataset.id;
+            if (button.classList.contains('edit-btn')) {
+                openFormModal(model.slice(0, -1), id);
+            }
+            if (button.classList.contains('delete-btn')) {
+                handleDelete(model.slice(0, -1), id);
+            }
         }
     });
 
@@ -82,7 +83,6 @@ async function fetchAPI(endpoint, options = {}) {
         const errorData = await response.json();
         throw new Error(errorData.detail || `API Error (${response.status})`);
     }
-    // For DELETE requests which might not have a body
     if (response.status === 204 || response.headers.get("content-length") === "0") {
         return null;
     }
@@ -90,11 +90,16 @@ async function fetchAPI(endpoint, options = {}) {
 }
 
 
-// --- Data Loading and Rendering ---
+// --- Generic Data Loading and Rendering (for Investments, Tariffs) ---
 function loadDataForTab(tabName) {
-    const modelName = tabName.slice(0, -1); // "investments" -> "investment"
+    if (tabName === 'metrics') {
+        loadMetricsTab();
+        return;
+    }
+
+    const modelName = tabName.slice(0, -1);
     const config = MODEL_CONFIG[modelName];
-    if (!config) return; // Not implemented yet
+    if (!config) return;
 
     const container = document.getElementById(`${tabName}-table-container`);
     container.innerHTML = '<em>Loading...</em>';
@@ -105,7 +110,7 @@ function loadDataForTab(tabName) {
                 container.innerHTML = `<p>No ${tabName} found. Add one to get started.</p>`;
                 return;
             }
-            const table = createTableFromData(data, Object.keys(config.fields), modelName);
+            const table = createGenericTable(data, Object.keys(config.fields), modelName);
             container.innerHTML = '';
             container.appendChild(table);
         })
@@ -115,14 +120,13 @@ function loadDataForTab(tabName) {
         });
 }
 
-function createTableFromData(data, fields, modelName) {
+function createGenericTable(data, fields, modelName) {
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const tbody = document.createElement('tbody');
 
-    // Header
     const headerRow = document.createElement('tr');
-    const displayFields = ['id', ...fields]; // Add id to the beginning
+    const displayFields = ['id', ...fields];
     displayFields.forEach(field => {
         const th = document.createElement('th');
         th.textContent = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -131,22 +135,12 @@ function createTableFromData(data, fields, modelName) {
     headerRow.appendChild(document.createElement('th')).textContent = 'Actions';
     thead.appendChild(headerRow);
 
-    // Body
     data.forEach(item => {
         const row = document.createElement('tr');
         displayFields.forEach(field => {
             const td = document.createElement('td');
-            let value = item[field];
-            if (typeof value === 'undefined' || value === null) {
-                value = 'N/A';
-            }
-            // Simple truncation for long text
-            if (typeof value === 'string' && value.length > 50) {
-                td.textContent = value.substring(0, 50) + '...';
-                td.title = value;
-            } else {
-                td.textContent = value;
-            }
+            let value = item[field] === undefined || item[field] === null ? 'N/A' : item[field];
+            td.textContent = value;
             row.appendChild(td);
         });
 
@@ -192,24 +186,174 @@ const MODEL_CONFIG = {
     metric: {
         title: 'Monthly Metric',
         fields: {
-            period_start: { label: 'Period Start', type: 'date', required: true },
-            account_name: { label: 'Account Name', type: 'text', required: true },
-            production_total_kwh: { label: 'Production (kWh)', type: 'number', step: '0.01', required: true },
-            import_low_kwh: { label: 'Import Low (kWh)', type: 'number', step: '0.01', required: true },
-            import_high_kwh: { label: 'Import High (kWh)', type: 'number', step: '0.01', required: true },
-            export_total_kwh: { label: 'Export (kWh)', type: 'number', step: '0.01', required: true },
-            consumption_ev_kwh: { label: 'EV Consumption (kWh)', type: 'number', step: '0.01' },
+            grid_consumption_low_kwh: { label: 'Grid Cons. Low (kWh)', type: 'number', step: '0.01' },
+            grid_consumption_high_kwh: { label: 'Grid Cons. High (kWh)', type: 'number', step: '0.01' },
+            grid_feed_in_low_kwh: { label: 'Grid Feed-in Low (kWh)', type: 'number', step: '0.01' },
+            grid_feed_in_high_kwh: { label: 'Grid Feed-in High (kWh)', type: 'number', step: '0.01' },
+            consumption_price_low_eur_kwh: { label: 'Cons. Price Low (€/kWh)', type: 'number', step: '0.00001' },
+            consumption_price_high_eur_kwh: { label: 'Cons. Price High (€/kWh)', type: 'number', step: '0.00001' },
+            feed_in_tariff_low_eur_kwh: { label: 'Feed-in Low (€/kWh)', type: 'number', step: '0.00001' },
+            feed_in_tariff_high_eur_kwh: { label: 'Feed-in High (€/kWh)', type: 'number', step: '0.00001' },
+            solar_production_kwh: { label: 'Solar Prod. (kWh)', type: 'number', step: '0.01' },
             battery_charge_kwh: { label: 'Battery Charge (kWh)', type: 'number', step: '0.01' },
             battery_discharge_kwh: { label: 'Battery Discharge (kWh)', type: 'number', step: '0.01' },
-            monthly_prepayment_eur: { label: 'Prepayment (€)', type: 'number', step: '0.01', required: true }
+            monthly_prepayment_eur: { label: 'Prepayment (€)', type: 'number', step: '0.01' },
         }
     }
 };
 
 
-// --- Modal and Form Logic ---
+// --- Metrics Tab Specific Logic ---
+function loadMetricsTab() {
+    const yearSelector = document.getElementById('metric-year-selector');
+    const currentYear = new Date().getFullYear();
+
+    // Populate year selector
+    yearSelector.innerHTML = '';
+    for (let i = currentYear + 1; i >= currentYear - 10; i--) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i;
+        if (i === currentYear) {
+            option.selected = true;
+        }
+        yearSelector.appendChild(option);
+    }
+
+    yearSelector.addEventListener('change', () => {
+        renderMetricsTable(yearSelector.value);
+    });
+
+    renderMetricsTable(currentYear);
+}
+
+async function renderMetricsTable(year) {
+    const container = document.getElementById('metrics-table-container');
+    container.innerHTML = '<em>Loading...</em>';
+
+    try {
+        const data = await fetchAPI(`/metrics/${year}`);
+        const table = document.createElement('table');
+        table.className = 'editable-table';
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+        const fields = MODEL_CONFIG.metric.fields;
+
+        // Header
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = '<th>Month</th>';
+        for (const key in fields) {
+            headerRow.innerHTML += `<th>${fields[key].label}</th>`;
+        }
+        headerRow.innerHTML += '<th>Actions</th>';
+        thead.appendChild(headerRow);
+
+        // Body
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            row.dataset.month = item.month;
+            const monthName = new Date(year, item.month - 1, 1).toLocaleString('default', { month: 'long' });
+            row.innerHTML = `<td>${monthName}</td>`;
+
+            let isComplete = true;
+            for (const key in fields) {
+                const value = item[key] === null ? '' : item[key];
+                if (value === '') isComplete = false;
+                const fieldConfig = fields[key];
+                row.innerHTML += `
+                    <td>
+                        <input
+                            type="${fieldConfig.type}"
+                            name="${key}"
+                            value="${value}"
+                            step="${fieldConfig.step || ''}"
+                            class="editable-input"
+                        />
+                    </td>
+                `;
+            }
+            row.innerHTML += `
+                <td>
+                    <button class="save-metric-btn">Save</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            row.classList.toggle('incomplete', !isComplete);
+            row.classList.toggle('complete', isComplete);
+        });
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        container.innerHTML = '';
+        container.appendChild(table);
+
+        // Add event listeners for save buttons
+        table.querySelectorAll('.save-metric-btn').forEach(btn => {
+            btn.addEventListener('click', handleMetricSave);
+        });
+
+    } catch (error) {
+        console.error(`Failed to load metrics for ${year}:`, error);
+        container.innerHTML = `<p class="error-text">Error: ${error.message}</p>`;
+    }
+}
+
+async function handleMetricSave(event) {
+    const button = event.target;
+    const row = button.closest('tr');
+    const year = document.getElementById('metric-year-selector').value;
+    const month = row.dataset.month;
+
+    const data = {};
+    const inputs = row.querySelectorAll('input.editable-input');
+    let isComplete = true;
+
+    inputs.forEach(input => {
+        const value = input.value;
+        if (value === '') {
+            data[input.name] = null;
+            isComplete = false;
+        } else {
+            data[input.name] = Number(value);
+        }
+    });
+
+    button.textContent = 'Saving...';
+    button.disabled = true;
+
+    try {
+        await fetchAPI(`/metrics/${year}/${month}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+        button.textContent = 'Save';
+        button.disabled = false;
+        row.classList.remove('incomplete', 'complete');
+        row.classList.add(isComplete ? 'complete' : 'incomplete');
+        // Optional: Add a temporary success indicator
+        row.classList.add('success-flash');
+        setTimeout(() => row.classList.remove('success-flash'), 1500);
+
+    } catch (error) {
+        console.error('Failed to save metric:', error);
+        alert(`Error: ${error.message}`);
+        button.textContent = 'Save';
+        button.disabled = false;
+    }
+}
+
+
+// --- Generic Modal Form Logic (for Investments, Tariffs) ---
+// This part remains unchanged for other tabs.
+async function openFormModal(modelName, id = null) { /* ... existing implementation ... */ }
+async function handleFormSubmit(event) { /* ... existing implementation ... */ }
+async function handleDelete(modelName, id) { /* ... existing implementation ... */ }
+// NOTE: I'm replacing the file, so I need to include the full content of the functions I'm keeping.
+// I will copy the content of the old functions here.
+
 async function openFormModal(modelName, id = null) {
     const config = MODEL_CONFIG[modelName];
+    if (!config) return; // Should not happen for investments/tariffs
     const modal = document.getElementById('form-modal');
     const modalTitle = document.getElementById('modal-title');
     const form = document.getElementById('modal-form');
@@ -222,6 +366,7 @@ async function openFormModal(modelName, id = null) {
     if (id) {
         modalTitle.textContent = `Edit ${config.title}`;
         try {
+            // Note: The generic API endpoint is pluralized
             data = await fetchAPI(`/${modelName}s/${id}`);
         } catch (error) {
             console.error(`Failed to fetch ${modelName} data:`, error);
@@ -239,7 +384,7 @@ async function openFormModal(modelName, id = null) {
         input.name = key;
         input.id = `form-${key}`;
         if (input.type === 'date' && value) {
-            input.value = value.split('T')[0]; // Handle date formatting
+            input.value = value.split('T')[0];
         } else {
             input.value = value;
         }
@@ -270,11 +415,11 @@ async function handleFormSubmit(event) {
     const form = event.target;
     const modelName = form.dataset.model;
     const id = form.dataset.id;
+    if (!modelName) return;
 
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
-    // Clean up empty optional fields
     for (const key in data) {
         if (data[key] === '') {
             data[key] = null;

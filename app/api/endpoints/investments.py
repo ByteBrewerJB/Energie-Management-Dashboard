@@ -37,33 +37,33 @@ def create_investment(
     return investment
 
 
-@router.get("/investments/{investment_id}", response_model=SolarPanel)
+@router.get("/investments/{solar_panel_id}", response_model=SolarPanel)
 def read_investment(
     *,
     db: Session = Depends(get_db),
-    investment_id: int,
+    solar_panel_id: int,
 ) -> Any:
     """
     Get a specific solar panel installation by its ID.
     """
-    investment = crud_solar_panel.get(db, solar_panel_id=investment_id)
+    investment = crud_solar_panel.get(db, solar_panel_id=solar_panel_id)
     if not investment:
         raise HTTPException(status_code=404, detail="Investment not found")
     return investment
 
 
-@router.put("/investments/{investment_id}", response_model=SolarPanel)
+@router.put("/investments/{solar_panel_id}", response_model=SolarPanel)
 def update_investment(
     *,
     db: Session = Depends(get_db),
-    investment_id: int,
+    solar_panel_id: int,
     solar_panel_in: SolarPanelUpdate,
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
     Update an existing solar panel installation.
     """
-    investment = crud_solar_panel.get(db, solar_panel_id=investment_id)
+    investment = crud_solar_panel.get(db, solar_panel_id=solar_panel_id)
     if not investment:
         raise HTTPException(status_code=404, detail="Investment not found")
 
@@ -71,19 +71,19 @@ def update_investment(
     return investment
 
 
-@router.delete("/investments/{investment_id}", response_model=SolarPanel)
+@router.delete("/investments/{solar_panel_id}", response_model=SolarPanel)
 def delete_investment(
     *,
     db: Session = Depends(get_db),
-    investment_id: int,
+    solar_panel_id: int,
     current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
     Delete a solar panel installation.
     """
-    investment = crud_solar_panel.get(db, solar_panel_id=investment_id)
+    investment = crud_solar_panel.get(db, solar_panel_id=solar_panel_id)
     if not investment:
         raise HTTPException(status_code=404, detail="Investment not found")
 
-    investment = crud_solar_panel.remove(db=db, solar_panel_id=investment_id)
+    investment = crud_solar_panel.remove(db=db, solar_panel_id=solar_panel_id)
     return investment

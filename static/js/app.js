@@ -8,23 +8,21 @@ let productionForecastChartInstance = null;
 document.addEventListener('DOMContentLoaded', () => {
     const themeSwitch = document.getElementById('checkbox');
     if (themeSwitch) {
+        // Set the default theme to light. Check localStorage for 'dark-mode' override.
         const currentTheme = localStorage.getItem('theme');
-
-        if (currentTheme) {
-            document.body.classList.add(currentTheme);
-
-            if (currentTheme === 'dark-mode') {
-                themeSwitch.checked = true;
-            }
+        if (currentTheme === 'dark-mode') {
+            document.body.classList.add('dark-mode');
+            themeSwitch.checked = true;
         }
 
+        // Listen for theme changes
         themeSwitch.addEventListener('change', function(event) {
             if (event.target.checked) {
                 document.body.classList.add('dark-mode');
                 localStorage.setItem('theme', 'dark-mode');
             } else {
                 document.body.classList.remove('dark-mode');
-                localStorage.removeItem('theme'); // Remove theme to default to light
+                localStorage.removeItem('theme'); // Light theme is the default
             }
         });
     }

@@ -9,7 +9,7 @@
 /* 1. FONT IMPORT */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* 2. CSS CUSTOM PROPERTIES (VARIABLES) - Dark Mode First */
+/* 2. CSS CUSTOM PROPERTIES (VARIABLES) - Light Mode First (Default) */
 :root {
     /* Legacy palette (kept for compatibility with older components) */
     --primary-color: #0052D4;
@@ -18,15 +18,15 @@
     --secondary-color: #36A2EB;
     --tertiary-color: #4BC0C0;
 
-    /* Dark theme palette */
-    --background-color: #1A202C;
-    --surface-color: #2D3748; /* For cards/components */
-    --primary-text-color: #F7FAFC;
-    --secondary-text-color: #A0AEC0; /* For subtitles and less important text */
-    --accent-color: #38A169; /* Electric Green */
-    --accent-color-hover: #48BB78;
-    --error-color: #DD6B20; /* Soft Orange */
-    --border-color: #4A5568;
+    /* Light theme palette */
+    --background-color: #F7FAFC;
+    --surface-color: #FFFFFF;
+    --primary-text-color: #1A202C;
+    --secondary-text-color: #718096;
+    --accent-color: #2C5282; /* A deep blue for a professional look */
+    --accent-color-hover: #3182CE;
+    --error-color: #C53030; /* A stronger red for errors */
+    --border-color: #E2E8F0;
 
     /* Typography */
     --font-family-sans: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
@@ -50,6 +50,18 @@
     /* Effects */
     --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark theme overrides */
+body.dark-mode {
+    --background-color: #1A202C;
+    --surface-color: #2D3748;
+    --primary-text-color: #F7FAFC;
+    --secondary-text-color: #A0AEC0;
+    --accent-color: #38A169; /* Electric Green */
+    --accent-color-hover: #48BB78;
+    --error-color: #DD6B20; /* Soft Orange */
+    --border-color: #4A5568;
 }
 
 /* 3. GENERAL BODY & TYPOGRAPHY */

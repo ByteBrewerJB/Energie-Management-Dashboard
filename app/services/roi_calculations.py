@@ -26,21 +26,21 @@ def calculate_solar_panel_roi(db: Session, solar_panel_id: int) -> ROIStatus:
 
     for journal in journals:
         # 1. Calculate revenue from selling to the grid
-        feed_in_revenue = (Decimal(journal.grid_feed_in_low_kwh) * journal.feed_in_tariff_low_eur_kwh) + \
-                          (Decimal(journal.grid_feed_in_high_kwh) * journal.feed_in_tariff_high_eur_kwh)
+        feed_in_revenue = (Decimal(journal.grid_feed_in_low_kwh or 0) * Decimal(journal.feed_in_tariff_low_eur_kwh or 0)) + \
+                          (Decimal(journal.grid_feed_in_high_kwh or 0) * Decimal(journal.feed_in_tariff_high_eur_kwh or 0))
 
         # 2. Calculate value of self-consumed energy (avoided cost)
         energy_flow = energy_calculations.calculate_energy_flow(journal)
-        self_consumption_kwh = energy_flow["self_consumption_kwh"]
+        self_consumption_kwh = Decimal(energy_flow.get("self_consumption_kwh", 0))
 
-        total_grid_consumption_kwh = Decimal(journal.grid_consumption_low_kwh) + Decimal(journal.grid_consumption_high_kwh)
-        total_consumption_cost = (Decimal(journal.grid_consumption_low_kwh) * journal.consumption_price_low_eur_kwh) + \
-                                 (Decimal(journal.grid_consumption_high_kwh) * journal.consumption_price_high_eur_kwh)
+        total_grid_consumption_kwh = Decimal(journal.grid_consumption_low_kwh or 0) + Decimal(journal.grid_consumption_high_kwh or 0)
+        total_consumption_cost = (Decimal(journal.grid_consumption_low_kwh or 0) * Decimal(journal.consumption_price_low_eur_kwh or 0)) + \
+                                 (Decimal(journal.grid_consumption_high_kwh or 0) * Decimal(journal.consumption_price_high_eur_kwh or 0))
 
         if total_grid_consumption_kwh > 0:
             avg_consumption_price = total_consumption_cost / total_grid_consumption_kwh
         else:
-            avg_consumption_price = journal.consumption_price_high_eur_kwh # Fallback
+            avg_consumption_price = Decimal(journal.consumption_price_high_eur_kwh or 0) # Fallback
 
         avoided_costs = self_consumption_kwh * avg_consumption_price
 
@@ -91,10 +91,10 @@ def calculate_battery_roi(db: Session, battery_id: int) -> ROIStatus:
         charge_from_grid_kwh = battery_charge_kwh - charge_from_solar_kwh
 
         # Cost is only incurred for charging from the grid
-        charge_cost = charge_from_grid_kwh * journal.consumption_price_low_eur_kwh
+        charge_cost = charge_from_grid_kwh * Decimal(journal.consumption_price_low_eur_kwh or 0)
 
         # Benefit is from discharging during high-price periods
-        avoided_cost = Decimal(journal.battery_discharge_kwh or 0) * journal.consumption_price_high_eur_kwh
+        avoided_cost = Decimal(journal.battery_discharge_kwh or 0) * Decimal(journal.consumption_price_high_eur_kwh or 0)
 
         monthly_savings = avoided_cost - charge_cost
         cumulative_savings += monthly_savings

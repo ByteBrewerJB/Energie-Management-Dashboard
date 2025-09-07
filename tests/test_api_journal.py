@@ -5,8 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.db.session import Base, get_db
 from app.api.deps import get_current_user
-from app.core.security import create_access_token
-from datetime import timedelta
+from app.crud import crud_journal
+from app.schemas import journal as journal_schema
 
 # --- Test Database Setup ---
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -42,30 +42,24 @@ def db_session():
     Base.metadata.drop_all(bind=engine)
 
 # --- Tests ---
-def test_get_journals_for_year_creates_entries(db_session):
+def test_get_journals_for_year_returns_empty_list_for_new_year(db_session):
     """
-    Test that GET /api/metrics/{year} creates 12 new, empty entries if they don't exist.
+    Test that GET /api/metrics/{year} returns an empty list if no entries exist.
     """
     response = client.get("/api/metrics/2025")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 12
-    for month_data in data:
-        assert month_data["metric"]["year"] == 2025
-        assert month_data["metric"]["solar_production_kwh"] is None
-        assert month_data["metric"]["id"] is not None
-        # Also check that the calculated fields are present
-        assert "financials" in month_data
-        assert "energy_flow" in month_data
+    assert len(data) == 0
 
 def test_update_journal_entry(db_session):
     """
     Test that a PUT request to /api/metrics/{year}/{month} correctly updates an entry.
     """
-    # First, ensure the entries for 2026 are created
-    client.get("/api/metrics/2026")
+    # First, create an entry for 2026
+    journal_in = journal_schema.MonthlyJournalCreate(year=2026, month=5, car_entries=[])
+    crud_journal.create_journal(db_session, obj_in=journal_in)
 
-    # Now, update one of them
+    # Now, update it
     update_data = {
         "year": 2026,
         "month": 5,
@@ -96,7 +90,6 @@ def test_update_nonexistent_journal_fails(db_session):
     """
     Test that a PUT request to a non-existent journal entry fails with a 404.
     """
-    # Note: We do not call GET /api/metrics/2027, so no entries exist for this year.
     response = client.put("/api/metrics/2027/1", json={"year": 2027, "month": 1, "solar_production_kwh": 100})
     assert response.status_code == 404
     assert response.json()["detail"] == "Journal not found for this period."
@@ -106,21 +99,16 @@ def test_get_journals_for_year_returns_existing(db_session):
     Test that GET /api/metrics/{year} returns existing data without modifying it.
     """
     # Create and update an entry
-    client.get("/api/metrics/2028")
-    client.put("/api/metrics/2028/3", json={"year": 2028, "month": 3, "solar_production_kwh": 555.5})
+    journal_in = journal_schema.MonthlyJournalCreate(year=2028, month=3, solar_production_kwh=555.5, car_entries=[])
+    crud_journal.create_journal(db_session, obj_in=journal_in)
 
     # Fetch the data for the year again
     response = client.get("/api/metrics/2028")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 12
+    assert len(data) == 1
 
     # Check the updated month
     march_data = next((m["metric"] for m in data if m["metric"]["month"] == 3), None)
     assert march_data is not None
     assert march_data["solar_production_kwh"] == 555.5
-
-    # Check a different month to ensure it's still empty
-    april_data = next((m["metric"] for m in data if m["metric"]["month"] == 4), None)
-    assert april_data is not None
-    assert april_data["solar_production_kwh"] is None

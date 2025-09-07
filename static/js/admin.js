@@ -487,13 +487,13 @@ async function renderMetricsTable(year) {
         // Body
         data.forEach(item => {
             const row = document.createElement('tr');
-            row.dataset.month = item.month;
-            const monthName = new Date(year, item.month - 1, 1).toLocaleString('default', { month: 'long' });
+            row.dataset.month = item.metric.month;
+            const monthName = new Date(year, item.metric.month - 1, 1).toLocaleString('default', { month: 'long' });
             row.innerHTML = `<td>${monthName}</td>`;
 
             let isComplete = true;
             for (const key in fields) {
-                const value = item[key] === null ? '' : item[key];
+                const value = item.metric[key] === null ? '' : item.metric[key];
                 if (value === '') isComplete = false;
                 const fieldConfig = fields[key];
                 row.innerHTML += `

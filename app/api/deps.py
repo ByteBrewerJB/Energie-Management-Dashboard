@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 
 from app.core.config import settings
 from app.schemas.token import TokenData
+from app.db.session import get_db
 
 # This will be the URL that clients use to get the token (the login endpoint)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")

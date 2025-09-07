@@ -13,7 +13,8 @@ from app.api.endpoints import (
     batteries,
     cars,
     journal,
-    tariffs
+    tariffs,
+    debug
 )
 
 app = FastAPI(
@@ -49,6 +50,7 @@ app.include_router(investments.router, prefix="/api", tags=["Investments"])
 app.include_router(tariffs.router, prefix="/api", tags=["Tariffs"])
 app.include_router(batteries.router, prefix="/api", tags=["Batteries"])
 app.include_router(cars.router, prefix="/api", tags=["Cars"])
+app.include_router(debug.router, prefix="/api", tags=["Debug"])
 
 
 @app.get("/", tags=["Root"])

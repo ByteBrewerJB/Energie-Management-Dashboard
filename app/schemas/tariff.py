@@ -1,45 +1,46 @@
 from pydantic import BaseModel
-from datetime import date
 from typing import Optional
+from decimal import Decimal
 
 
 # Shared properties
 class TariffBase(BaseModel):
-    """Base schema for tariffs, containing all shared properties."""
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    purchase_low_eur_kwh: Optional[float] = None
-    purchase_high_eur_kwh: Optional[float] = None
-    sale_eur_kwh: Optional[float] = None
-    vat_percentage: Optional[float] = None
-    fixed_roi_rate_eur_kwh: Optional[float] = None
+    year: Optional[int] = None
+    month: Optional[int] = None
+    consumption_price_low_eur_kwh: Optional[Decimal] = None
+    consumption_price_high_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_low_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_high_eur_kwh: Optional[Decimal] = None
+    vat_percentage: Optional[Decimal] = None
+    fixed_roi_rate_eur_kwh: Optional[Decimal] = None
 
 
 # Properties to receive on item creation
 class TariffCreate(TariffBase):
-    """Schema for creating a new tariff, with required fields."""
-    start_date: date
-    purchase_low_eur_kwh: float
-    purchase_high_eur_kwh: float
-    sale_eur_kwh: float
-    vat_percentage: float
+    year: int
+    month: int
+    consumption_price_low_eur_kwh: Decimal
+    consumption_price_high_eur_kwh: Decimal
+    feed_in_tariff_low_eur_kwh: Decimal
+    feed_in_tariff_high_eur_kwh: Decimal
+    vat_percentage: Decimal
 
 
 # Properties to receive on item update
 class TariffUpdate(TariffBase):
-    """Schema for updating an existing tariff. All fields are optional."""
     pass
 
 
 # Properties shared by models stored in DB
 class TariffInDBBase(TariffBase):
-    """Base schema for tariffs as stored in the database."""
     id: int
-    start_date: date
-    purchase_low_eur_kwh: float
-    purchase_high_eur_kwh: float
-    sale_eur_kwh: float
-    vat_percentage: float
+    year: int
+    month: int
+    consumption_price_low_eur_kwh: Decimal
+    consumption_price_high_eur_kwh: Decimal
+    feed_in_tariff_low_eur_kwh: Decimal
+    feed_in_tariff_high_eur_kwh: Decimal
+    vat_percentage: Decimal
 
     class Config:
         orm_mode = True
@@ -47,5 +48,4 @@ class TariffInDBBase(TariffBase):
 
 # Properties to return to client
 class Tariff(TariffInDBBase):
-    """Schema for returning tariff data to the client."""
     pass

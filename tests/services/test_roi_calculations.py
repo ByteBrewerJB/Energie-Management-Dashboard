@@ -3,93 +3,102 @@ from unittest.mock import MagicMock, patch
 from datetime import date
 from decimal import Decimal
 
-from app.services.roi_calculations import calculate_roi_status
-from app.models.models import Investment, MonthlyMetric, Tariff
+from app.services.roi_calculations import calculate_solar_panel_roi, calculate_battery_roi
+from app.models.models import SolarPanel, Battery, MonthlyMetric, Tariff
 from app.schemas.roi import ROIStatus, ROIMethodResult
 
-class TestROICalculations(unittest.TestCase):
+class TestNewROICalculations(unittest.TestCase):
 
-    @patch('app.services.roi_calculations.crud_investments')
-    @patch('app.services.roi_calculations.crud_metrics')
+    @patch('app.services.roi_calculations.crud_solar_panel')
+    @patch('app.services.roi_calculations.crud_metrics.models')
     @patch('app.services.roi_calculations.crud_tariffs')
     @patch('app.services.roi_calculations.energy_calculations')
     @patch('app.services.roi_calculations.financial_calculations')
-    def test_calculate_roi_status(self, mock_financial_calculations, mock_energy_calculations, mock_crud_tariffs, mock_crud_metrics, mock_crud_investments):
-        # Mocking the database session
+    def test_calculate_solar_panel_roi(self, mock_financial, mock_energy, mock_crud_tariffs, mock_crud_metrics_models, mock_crud_solar_panel):
         mock_db = MagicMock()
 
-        # Mocking the investment
-        mock_investment = Investment(
+        # Mock Solar Panel
+        mock_solar_panel = SolarPanel(
             id=1,
-            installation_date=date(2023, 1, 1),
-            total_cost_eur=Decimal('10000.00'),
+            purchase_date=date(2023, 1, 1),
+            purchase_cost_eur=Decimal('10000.00'),
         )
-        mock_crud_investments.get.return_value = mock_investment
+        mock_crud_solar_panel.get.return_value = mock_solar_panel
 
-        # Mocking metrics
+        # Mock Metrics
         mock_metrics = [
             MonthlyMetric(
                 period_start=date(2023, 1, 1),
-                production_total_kwh=100,
-                export_total_kwh=50,
-                import_low_kwh=10,
-                import_high_kwh=10,
-                consumption_ev_kwh=0,
-                battery_charge_kwh=0,
-                battery_discharge_kwh=0,
-            ),
-            MonthlyMetric(
-                period_start=date(2023, 2, 1),
-                production_total_kwh=120,
-                export_total_kwh=60,
-                import_low_kwh=12.5,
-                import_high_kwh=12.5,
-                consumption_ev_kwh=0,
-                battery_charge_kwh=0,
-                battery_discharge_kwh=0,
+                production_total_kwh=100.0,
+                grid_consumption_low_kwh=10.0,
+                grid_consumption_high_kwh=10.0,
             ),
         ]
-        mock_crud_metrics.get_metrics_by_investment.return_value = mock_metrics
+        # Mock the query chain
+        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = mock_metrics
 
-        # Mocking tariff
+        # Mock Tariff
         mock_tariff = Tariff(
-            purchase_high_eur_kwh=Decimal('0.25'),
-            fixed_roi_rate_eur_kwh=Decimal('0.10'),
+            consumption_price_low_eur_kwh=Decimal('0.20'),
+            consumption_price_high_eur_kwh=Decimal('0.30'),
         )
-        mock_crud_tariffs.get_active_tariff.return_value = mock_tariff
+        mock_crud_tariffs.get_by_year_and_month.return_value = mock_tariff
 
-        # Mocking energy and financial calculations
-        # In the first month, self_consumption is 100 - 50 = 50
-        # In the second month, self_consumption is 120 - 60 = 60
-        mock_energy_calculations.calculate_energy_flow.side_effect = [
-            {'self_consumption_kwh': 50},
-            {'self_consumption_kwh': 60}
-        ]
-        mock_financial_calculations.calculate_financials.side_effect = [
-            {'export_revenue_ex_vat': Decimal('12.5')},
-            {'export_revenue_ex_vat': Decimal('15.0')}
-        ]
+        # Mock service calculations
+        mock_energy.calculate_energy_flow.return_value = {'self_consumption_kwh': Decimal('50.0')}
+        mock_financial.calculate_energy_financials.return_value = {'total_feed_in_revenue_eur': Decimal('15.0')}
 
-        # Call the function
-        roi_status = calculate_roi_status(mock_db, 1)
+        # Call function
+        roi_status = calculate_solar_panel_roi(mock_db, 1)
 
         # Assertions
-        self.assertIsNotNone(roi_status)
-        # Method 1
-        # Month 1: (50 * 0.25) + 12.5 = 12.5 + 12.5 = 25
-        # Month 2: (60 * 0.25) + 15.0 = 15.0 + 15.0 = 30
-        # Total: 25 + 30 = 55
-        self.assertAlmostEqual(roi_status.method_1.cumulative_savings, 55, places=2)
-        self.assertAlmostEqual(roi_status.method_1.remaining_balance, 10000 - 55, places=2)
-        self.assertAlmostEqual(roi_status.method_1.progress_percentage, (55/10000)*100, places=2)
+        # Avg consumption price = ((10 * 0.20) + (10 * 0.30)) / 20 = (2 + 3) / 20 = 0.25
+        # Avoided costs = 50 * 0.25 = 12.5
+        # Export revenue = 15.0
+        # Total savings = 12.5 + 15.0 = 27.5
+        self.assertAlmostEqual(roi_status.method_1.cumulative_savings, 27.5, places=2)
+        self.assertAlmostEqual(roi_status.method_1.remaining_balance, 10000 - 27.5, places=2)
 
-        # Method 2
-        # Month 1: 100 * 0.10 = 10
-        # Month 2: 120 * 0.10 = 12
-        # Total: 10 + 12 = 22
-        self.assertAlmostEqual(roi_status.method_2.cumulative_savings, 22, places=2)
-        self.assertAlmostEqual(roi_status.method_2.remaining_balance, 10000 - 22, places=2)
-        self.assertAlmostEqual(roi_status.method_2.progress_percentage, (22/10000)*100, places=2)
+    @patch('app.services.roi_calculations.crud_battery')
+    @patch('app.services.roi_calculations.crud_metrics.models')
+    @patch('app.services.roi_calculations.crud_tariffs')
+    def test_calculate_battery_roi(self, mock_crud_tariffs, mock_crud_metrics_models, mock_crud_battery):
+        mock_db = MagicMock()
+
+        # Mock Battery
+        mock_battery = Battery(
+            id=1,
+            purchase_date=date(2023, 1, 1),
+            purchase_cost_eur=Decimal('5000.00'),
+        )
+        mock_crud_battery.get.return_value = mock_battery
+
+        # Mock Metrics
+        mock_metrics = [
+            MonthlyMetric(
+                period_start=date(2023, 1, 1),
+                battery_charge_kwh=50.0,
+                battery_discharge_kwh=45.0,
+            ),
+        ]
+        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = mock_metrics
+
+        # Mock Tariff
+        mock_tariff = Tariff(
+            consumption_price_low_eur_kwh=Decimal('0.20'),
+            consumption_price_high_eur_kwh=Decimal('0.30'),
+        )
+        mock_crud_tariffs.get_by_year_and_month.return_value = mock_tariff
+
+        # Call function
+        roi_status = calculate_battery_roi(mock_db, 1)
+
+        # Assertions
+        # Avoided cost = 45 * 0.30 = 13.5
+        # Charge cost = 50 * 0.20 = 10.0
+        # Monthly savings = 13.5 - 10.0 = 3.5
+        self.assertAlmostEqual(roi_status.method_1.cumulative_savings, 3.5, places=2)
+        self.assertAlmostEqual(roi_status.method_1.remaining_balance, 5000 - 3.5, places=2)
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,11 +6,12 @@
     <title>JouleJournal - Energie Dashboard</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Placeholder for icon library -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
     <header>
         <h1>JouleJournal</h1>
-        <p>Een dashboard voor het monitoren van uw energieverbruik en -productie.</p>
         <div class="theme-switch-wrapper">
             <label class="theme-switch" for="checkbox">
                 <input type="checkbox" id="checkbox" />
@@ -20,37 +21,42 @@
     </header>
 
     <main>
-        <section id="kpi-container">
-            <h2>Kerncijfers (Huidig Jaar)</h2>
+        <!-- The sections are now wrapped in a div with class="card" -->
+        <div class="card" id="kpi-card">
+            <h2><i data-feather="bar-chart-2"></i> Kerncijfers (Huidig Jaar)</h2>
             <div id="kpis" class="kpi-grid">
                 <!-- KPI data wordt hier geladen door JavaScript -->
             </div>
-        </section>
+        </div>
 
-        <section id="roi-tracker-container">
-            <h2>Return on Investment (ROI) Tracker</h2>
+        <div class="card" id="roi-card">
+            <h2><i data-feather="trending-up"></i> Return on Investment (ROI) Tracker</h2>
             <div id="roi-tracker">
                 <!-- ROI voortgangsbalk wordt hier geladen -->
             </div>
-        </section>
+        </div>
 
         <div class="chart-grid">
-            <div class="chart-container">
+            <div class="card chart-container">
                 <canvas id="energyBalanceChart"></canvas>
             </div>
-            <div class="chart-container">
+            <div class="card chart-container">
                 <canvas id="consumptionSplitChart"></canvas>
             </div>
-            <div class="chart-container full-width">
+            <div class="card chart-container full-width">
                 <canvas id="productionForecastChart"></canvas>
             </div>
         </div>
     </main>
 
     <footer>
-        <p>JouleJournal Dashboard v1.0 | <a href="/admin" class="admin-button">Admin Portal</a></p>
+        <p>JouleJournal Dashboard v1.0 | <a href="/admin">Admin Portal</a></p>
     </footer>
 
     <script src="/static/js/app.js"></script>
+    <script>
+      // To replace icons later
+      feather.replace();
+    </script>
 </body>
 </html>

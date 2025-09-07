@@ -7,6 +7,14 @@ WORKDIR /app
 # Install Poetry
 RUN pip install poetry
 
+# Install system dependencies required for building Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    python3-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy the dependency files
 COPY pyproject.toml poetry.lock ./
 

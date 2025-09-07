@@ -4,6 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.core.logging_config import setup_logging
 
+setup_logging()
+
 from app.api.endpoints import (
     analysis,
     metrics,
@@ -21,11 +23,6 @@ app = FastAPI(
     description="Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbruik.",
     version="1.0.0"
 )
-
-# Call setup_logging on startup
-@app.on_event("startup")
-async def startup_event():
-    setup_logging()
 
 # Middleware to log requests
 @app.middleware("http")

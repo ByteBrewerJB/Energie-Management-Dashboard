@@ -1,5 +1,50 @@
-import logging
+import logging.config
+import os
+from app.core.config import settings
 from pythonjsonlogger import jsonlogger
+
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "app.core.logging_config.CustomJsonFormatter",
+        },
+    },
+    "handlers": {
+        "default": {
+            "level": settings.LOG_LEVEL,
+            "formatter": "json",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+        },
+    },
+    "loggers": {
+        "": {  # root logger
+            "level": settings.LOG_LEVEL,
+            "handlers": ["default"],
+            "propagate": False,
+        },
+        "uvicorn.error": {
+            "level": settings.LOG_LEVEL,
+            "handlers": ["default"],
+            "propagate": False,
+        },
+        "uvicorn.access": {
+            "level": settings.LOG_LEVEL,
+            "handlers": ["default"],
+            "propagate": False,
+        },
+        "joulejournal": {
+            "level": settings.LOG_LEVEL,
+            "handlers": ["default"],
+            "propagate": False,
+        },
+    },
+}
+
+def setup_logging():
+    logging.config.dictConfig(LOGGING_CONFIG)
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
     def add_fields(self, log_record, record, message_dict):
@@ -10,16 +55,3 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
             log_record['level'] = log_record['level'].upper()
         else:
             log_record['level'] = record.levelname
-
-def setup_logging():
-    logger = logging.getLogger("joulejournal")
-    logger.setLevel(logging.INFO)
-    logHandler = logging.StreamHandler()
-    formatter = CustomJsonFormatter('%(timestamp)s %(level)s %(name)s %(message)s')
-    logHandler.setFormatter(formatter)
-    logger.addHandler(logHandler)
-
-    uvicorn_logger = logging.getLogger("uvicorn")
-    uvicorn_logger.handlers = [logHandler]
-    uvicorn_access_logger = logging.getLogger("uvicorn.access")
-    uvicorn_access_logger.handlers = [logHandler]

@@ -20,79 +20,79 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.alter_column('monthly_journal', 'grid_consumption_low_kwh',
+    op.alter_column('monthly_metrics', 'grid_consumption_low_kwh',
                existing_type=sa.FLOAT(),
                nullable=True)
-    op.alter_column('monthly_journal', 'grid_consumption_high_kwh',
+    op.alter_column('monthly_metrics', 'grid_consumption_high_kwh',
                existing_type=sa.FLOAT(),
                nullable=True)
-    op.alter_column('monthly_journal', 'grid_feed_in_low_kwh',
+    op.alter_column('monthly_metrics', 'grid_feed_in_low_kwh',
                existing_type=sa.FLOAT(),
                nullable=True)
-    op.alter_column('monthly_journal', 'grid_feed_in_high_kwh',
+    op.alter_column('monthly_metrics', 'grid_feed_in_high_kwh',
                existing_type=sa.FLOAT(),
                nullable=True)
-    op.alter_column('monthly_journal', 'consumption_price_low_eur_kwh',
+    op.alter_column('monthly_metrics', 'consumption_price_low_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=True)
-    op.alter_column('monthly_journal', 'consumption_price_high_eur_kwh',
+    op.alter_column('monthly_metrics', 'consumption_price_high_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=True)
-    op.alter_column('monthly_journal', 'feed_in_tariff_low_eur_kwh',
+    op.alter_column('monthly_metrics', 'feed_in_tariff_low_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=True)
-    op.alter_column('monthly_journal', 'feed_in_tariff_high_eur_kwh',
+    op.alter_column('monthly_metrics', 'feed_in_tariff_high_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=True)
-    op.alter_column('monthly_journal', 'solar_production_kwh',
+    op.alter_column('monthly_metrics', 'solar_production_kwh',
                existing_type=sa.FLOAT(),
                nullable=True)
-    op.alter_column('monthly_journal', 'battery_charge_kwh',
+    op.alter_column('monthly_metrics', 'battery_charge_kwh',
                existing_type=sa.FLOAT(),
                nullable=True)
-    op.alter_column('monthly_journal', 'battery_discharge_kwh',
+    op.alter_column('monthly_metrics', 'battery_discharge_kwh',
                existing_type=sa.FLOAT(),
                nullable=True)
-    op.alter_column('monthly_journal', 'monthly_prepayment_eur',
+    op.alter_column('monthly_metrics', 'monthly_prepayment_eur',
                existing_type=sa.NUMERIC(precision=10, scale=2),
                nullable=True)
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.alter_column('monthly_journal', 'monthly_prepayment_eur',
+    op.alter_column('monthly_metrics', 'monthly_prepayment_eur',
                existing_type=sa.NUMERIC(precision=10, scale=2),
                nullable=False)
-    op.alter_column('monthly_journal', 'battery_discharge_kwh',
+    op.alter_column('monthly_metrics', 'battery_discharge_kwh',
                existing_type=sa.FLOAT(),
                nullable=False)
-    op.alter_column('monthly_journal', 'battery_charge_kwh',
+    op.alter_column('monthly_metrics', 'battery_charge_kwh',
                existing_type=sa.FLOAT(),
                nullable=False)
-    op.alter_column('monthly_journal', 'solar_production_kwh',
+    op.alter_column('monthly_metrics', 'solar_production_kwh',
                existing_type=sa.FLOAT(),
                nullable=False)
-    op.alter_column('monthly_journal', 'feed_in_tariff_high_eur_kwh',
+    op.alter_column('monthly_metrics', 'feed_in_tariff_high_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=False)
-    op.alter_column('monthly_journal', 'feed_in_tariff_low_eur_kwh',
+    op.alter_column('monthly_metrics', 'feed_in_tariff_low_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=False)
-    op.alter_column('monthly_journal', 'consumption_price_high_eur_kwh',
+    op.alter_column('monthly_metrics', 'consumption_price_high_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=False)
-    op.alter_column('monthly_journal', 'consumption_price_low_eur_kwh',
+    op.alter_column('monthly_metrics', 'consumption_price_low_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=False)
-    op.alter_column('monthly_journal', 'grid_feed_in_high_kwh',
+    op.alter_column('monthly_metrics', 'grid_feed_in_high_kwh',
                existing_type=sa.FLOAT(),
                nullable=False)
-    op.alter_column('monthly_journal', 'grid_feed_in_low_kwh',
+    op.alter_column('monthly_metrics', 'grid_feed_in_low_kwh',
                existing_type=sa.FLOAT(),
                nullable=False)
-    op.alter_column('monthly_journal', 'grid_consumption_high_kwh',
+    op.alter_column('monthly_metrics', 'grid_consumption_high_kwh',
                existing_type=sa.FLOAT(),
                nullable=False)
-    op.alter_column('monthly_journal', 'grid_consumption_low_kwh',
+    op.alter_column('monthly_metrics', 'grid_consumption_low_kwh',
                existing_type=sa.FLOAT(),
                nullable=False)

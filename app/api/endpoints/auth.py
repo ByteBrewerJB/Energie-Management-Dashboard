@@ -13,6 +13,20 @@ router = APIRouter()
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """
     OAuth2 compatible token login, get an access token for future requests.
+
+    This endpoint authenticates a user based on a username and password and
+    returns a JWT access token.
+
+    Args:
+        form_data: An OAuth2PasswordRequestForm object containing the
+                   username and password.
+
+    Returns:
+        A Token object containing the access token and token type.
+
+    Raises:
+        HTTPException: 401 Unauthorized if the username or password is
+                       incorrect.
     """
     # In a real app, you would look up the user in the database and use hashed passwords.
     # For this simple case, we are comparing the plain text admin password from settings.

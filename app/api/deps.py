@@ -10,8 +10,23 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
     """
-    Decode the JWT token to get the current user.
-    This will be used as a dependency to protect routes.
+    Decodes the JWT token to get the current user.
+
+    This function is used as a dependency to protect routes, ensuring that
+    the user is authenticated and is the admin user.
+
+    Args:
+        token: The OAuth2 bearer token.
+
+    Returns:
+        The username of the current user if the token is valid and belongs
+        to the admin.
+
+    Raises:
+        HTTPException: 401 Unauthorized if the token is invalid or credentials
+                       cannot be validated.
+        HTTPException: 403 Forbidden if the user is not the designated admin
+                       user.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

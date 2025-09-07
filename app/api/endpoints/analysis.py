@@ -17,7 +17,24 @@ def get_timeseries_analysis(
     end_date: date = Query(..., description="End date for analysis (YYYY-MM-DD)"),
 ):
     """
-    Performs a timeseries analysis of energy and financial data.
+    Performs a time-series analysis of energy and financial data.
+
+    This endpoint retrieves all monthly metrics within a specified date range,
+    calculates the corresponding energy flow and financial results for each
+    month, and returns a comprehensive analysis.
+
+    Args:
+        db: The database session dependency.
+        start_date: The start date for the analysis period (inclusive).
+        end_date: The end date for the analysis period (inclusive).
+
+    Returns:
+        A list of MonthlyAnalysisResult objects, each containing the metric,
+        energy flow, and financial data for a single month.
+
+    Raises:
+        HTTPException: 404 Not Found if no metrics or no active tariff are
+                       found for the specified period.
     """
     metrics = crud_analysis.get_metrics_for_period(db, start_date, end_date)
     if not metrics:

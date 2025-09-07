@@ -85,5 +85,49 @@ class TestNewROICalculations(unittest.TestCase):
         self.assertAlmostEqual(roi_status.method_1.cumulative_savings, 3.5, places=2)
         self.assertAlmostEqual(roi_status.method_1.remaining_balance, 5000 - 3.5, places=2)
 
+    @patch('app.services.roi_calculations.crud_battery')
+    def test_calculate_battery_roi_with_solar_charging(self, mock_crud_battery):
+        """
+        Tests that the battery ROI calculation correctly handles charging from solar.
+        """
+        mock_db = MagicMock()
+
+        # Mock Battery
+        mock_battery = Battery(
+            id=1,
+            purchase_date=date(2023, 1, 1),
+            purchase_cost_eur=Decimal('5000.00'),
+        )
+        mock_crud_battery.get.return_value = mock_battery
+
+        # Mock Journal with enough solar to cover battery charging
+        mock_journal = MonthlyJournal(
+            year=2023,
+            month=1,
+            solar_production_kwh=100.0,
+            grid_feed_in_low_kwh=0.0,
+            grid_feed_in_high_kwh=0.0,
+            grid_consumption_low_kwh=0.0,
+            grid_consumption_high_kwh=0.0,
+            battery_charge_kwh=50.0,
+            battery_discharge_kwh=45.0,
+            consumption_price_low_eur_kwh=Decimal('0.20'),
+            consumption_price_high_eur_kwh=Decimal('0.30'),
+            feed_in_tariff_low_eur_kwh=Decimal('0.05'),
+            feed_in_tariff_high_eur_kwh=Decimal('0.08'),
+        )
+        mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = [mock_journal]
+
+        # Call function
+        roi_status = calculate_battery_roi(mock_db, 1)
+
+        # Assertions
+        # Avoided cost = 45 * 0.30 = 13.5
+        # Charge cost should be 0, as charging is covered by solar
+        # Monthly savings = 13.5 - 0 = 13.5
+        self.assertAlmostEqual(roi_status.method_1.cumulative_savings, 13.5, places=2)
+        self.assertAlmostEqual(roi_status.method_1.remaining_balance, 5000 - 13.5, places=2)
+
+
 if __name__ == '__main__':
     unittest.main()

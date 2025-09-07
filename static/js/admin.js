@@ -1,5 +1,8 @@
 // --- Main Setup ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Feather icons
+    feather.replace();
+
     const token = localStorage.getItem('access_token');
     if (!token) {
         window.location.href = '/login';
@@ -15,17 +18,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tab navigation
     const tabs = document.querySelectorAll('.tab-link');
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetTab = tab.dataset.tab;
+        tab.addEventListener('click', (e) => {
+            const targetTab = e.currentTarget.dataset.tab;
             document.querySelector('.tab-link.active').classList.remove('active');
             document.querySelector('.tab-content.active').classList.remove('active');
-            tab.classList.add('active');
+            e.currentTarget.classList.add('active');
             document.getElementById(targetTab).classList.add('active');
             loadDataForTab(targetTab);
         });
     });
 
-    // Modal setup for non-metric forms
+    // Modal setup
     const modal = document.getElementById('form-modal');
     const closeBtn = document.querySelector('.close-btn');
     closeBtn.addEventListener('click', () => modal.style.display = 'none');
@@ -36,26 +39,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('modal-form').addEventListener('submit', handleFormSubmit);
 
-    // Event listeners for "Add New" buttons (non-metric)
+    // Event listeners for "Add New" buttons
     document.querySelectorAll('.add-new-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            openFormModal(e.target.dataset.model);
+            const model = e.currentTarget.dataset.model;
+            if (model) {
+                openFormModal(model);
+            }
         });
     });
 
-    // Delegated event listeners for table actions (non-metric)
+    // Delegated event listeners for table actions
     document.querySelector('main').addEventListener('click', e => {
         if (e.target.matches('.edit-btn, .delete-btn')) {
             const button = e.target;
-            const model = button.closest('.tab-content')?.id;
-            if (!model || model === 'metrics') return;
-
+            const model = button.dataset.model;
             const id = button.dataset.id;
+
             if (button.classList.contains('edit-btn')) {
-                openFormModal(model.slice(0, -1), id);
+                openFormModal(model, id);
             }
             if (button.classList.contains('delete-btn')) {
-                handleDelete(model.slice(0, -1), id);
+                handleDelete(model, id);
             }
         }
     });
@@ -97,13 +102,18 @@ async function fetchAPI(endpoint, options = {}) {
 }
 
 
-// --- Generic Data Loading and Rendering (for Investments, Tariffs) ---
+// --- Data Loading and Rendering ---
 function loadDataForTab(tabName) {
     if (tabName === 'metrics') {
         loadMetricsTab();
-        return;
+    } else if (tabName === 'investments') {
+        loadInvestmentsTab();
+    } else {
+        loadGenericTab(tabName);
     }
+}
 
+function loadGenericTab(tabName) {
     const modelName = tabName.slice(0, -1);
     const config = MODEL_CONFIG[modelName];
     if (!config) return;
@@ -153,8 +163,8 @@ function createGenericTable(data, fields, modelName) {
 
         const tdActions = document.createElement('td');
         tdActions.innerHTML = `
-            <button class="edit-btn" data-id="${item.id}">Edit</button>
-            <button class="delete-btn" data-id="${item.id}">Delete</button>
+            <button class="edit-btn" data-model="${modelName}" data-id="${item.id}">Edit</button>
+            <button class="delete-btn" data-model="${modelName}" data-id="${item.id}">Delete</button>
         `;
         row.appendChild(tdActions);
         tbody.appendChild(row);
@@ -166,16 +176,84 @@ function createGenericTable(data, fields, modelName) {
 }
 
 
+// --- Investments Tab Specific Logic ---
+function loadInvestmentsTab() {
+    const container = document.getElementById('investments-table-container');
+    container.innerHTML = '<em>Loading...</em>';
+
+    fetchAPI('/investments')
+        .then(data => {
+            if (data.length === 0) {
+                container.innerHTML = `<p>No investments found. Add one to get started.</p>`;
+                return;
+            }
+            const table = renderInvestmentsTable(data);
+            container.innerHTML = '';
+            container.appendChild(table);
+        })
+        .catch(error => {
+            console.error('Failed to load investments:', error);
+            container.innerHTML = `<p class="error-text">Error: ${error.message}</p>`;
+        });
+}
+
+function renderInvestmentsTable(data) {
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+
+    // Define headers
+    const headerRow = document.createElement('tr');
+    const headers = ['ID', 'Type', 'Name', 'Purchase Date', 'Cost (€)', 'Actions'];
+    headers.forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    // Create rows
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        const typeDisplay = item.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        row.innerHTML = `
+            <td>${item.id}</td>
+            <td>${typeDisplay}</td>
+            <td>${item.name}</td>
+            <td>${new Date(item.purchase_date).toLocaleDateString()}</td>
+            <td>${item.purchase_cost_eur}</td>
+            <td>
+                <button class="edit-btn" data-model="${item.type}" data-id="${item.id}">Edit</button>
+                <button class="delete-btn" data-model="${item.type}" data-id="${item.id}">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    return table;
+}
+
+
 // --- Model Configuration ---
 const MODEL_CONFIG = {
-    investment: {
-        title: 'Investment',
+    solar_panel: {
+        title: 'Solar Panel',
         fields: {
-            description: { label: 'Description', type: 'text', required: true },
-            installation_date: { label: 'Installation Date', type: 'date', required: true },
-            total_cost_eur: { label: 'Total Cost (€)', type: 'number', step: '0.01', required: true },
+            name: { label: 'Name', type: 'text', required: true, default: 'Zonnepanelen' },
+            purchase_date: { label: 'Purchase Date', type: 'date', required: true },
+            purchase_cost_eur: { label: 'Purchase Cost (€)', type: 'number', step: '0.01', required: true },
             total_power_wp: { label: 'Total Power (Wp)', type: 'number', required: true },
-            estimated_annual_production_kwh: { label: 'Est. Annual Production (kWh)', type: 'number' }
+            expected_annual_yield_kwh: { label: 'Est. Annual Yield (kWh)', type: 'number' }
+        }
+    },
+    battery: {
+        title: 'Battery',
+        fields: {
+            name: { label: 'Name', type: 'text', required: true, default: 'Batterij' },
+            purchase_date: { label: 'Purchase Date', type: 'date', required: true },
+            purchase_cost_eur: { label: 'Purchase Cost (€)', type: 'number', step: '0.01', required: true },
         }
     },
     tariff: {
@@ -210,28 +288,146 @@ const MODEL_CONFIG = {
 };
 
 
+// --- Modal Form Logic ---
+async function openFormModal(modelName, id = null) {
+    const config = MODEL_CONFIG[modelName];
+    if (!config) {
+        console.error("Unknown model type for form:", modelName);
+        return;
+    }
+    const modal = document.getElementById('form-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const form = document.getElementById('modal-form');
+
+    form.innerHTML = '';
+    form.dataset.model = modelName;
+    form.dataset.id = id || '';
+
+    let data = {};
+    if (id) {
+        modalTitle.textContent = `Edit ${config.title}`;
+        try {
+            // Fetch using the new type-specific endpoint
+            data = await fetchAPI(`/investments/${modelName}/${id}`);
+        } catch (error) {
+            console.error(`Failed to fetch ${modelName} data:`, error);
+            alert(`Error: ${error.message}`);
+            return;
+        }
+    } else {
+        modalTitle.textContent = `Add New ${config.title}`;
+    }
+
+    for (const [key, fieldConfig] of Object.entries(config.fields)) {
+        let value = data[key] || fieldConfig.default || '';
+        const input = document.createElement('input');
+        input.type = fieldConfig.type;
+        input.name = key;
+        input.id = `form-${key}`;
+        if (input.type === 'date' && value) {
+            input.value = value.split('T')[0]; // Format date for input
+        } else {
+            input.value = value;
+        }
+        if (fieldConfig.step) input.step = fieldConfig.step;
+        if (fieldConfig.required) input.required = true;
+
+        const label = document.createElement('label');
+        label.htmlFor = `form-${key}`;
+        label.textContent = fieldConfig.label;
+
+        const formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+        formGroup.appendChild(label);
+        formGroup.appendChild(input);
+        form.appendChild(formGroup);
+    }
+
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.textContent = id ? 'Update' : 'Create';
+    form.appendChild(submitButton);
+
+    modal.style.display = 'block';
+}
+
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const modelName = form.dataset.model;
+    const id = form.dataset.id;
+    if (!modelName) return;
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    // Convert empty strings to null for optional fields
+    for (const key in data) {
+        if (data[key] === '') {
+            data[key] = null;
+        }
+    }
+
+    try {
+        if (id) {
+            // Update uses the type-specific endpoint
+            await fetchAPI(`/investments/${modelName}/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data),
+            });
+        } else {
+            // Create uses the generic endpoint, but we add the type to the body
+            data.type = modelName;
+            await fetchAPI('/investments', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            });
+        }
+        document.getElementById('form-modal').style.display = 'none';
+        loadDataForTab('investments'); // Always reload investments tab
+    } catch (error) {
+        console.error(`Failed to save ${modelName}:`, error);
+        alert(`Error: ${error.message}`);
+    }
+}
+
+async function handleDelete(modelName, id) {
+    if (!confirm(`Are you sure you want to delete this ${modelName.replace('_', ' ')}? This action cannot be undone.`)) {
+        return;
+    }
+    try {
+        // Delete uses the new type-specific endpoint
+        await fetchAPI(`/investments/${modelName}/${id}`, { method: 'DELETE' });
+        loadDataForTab('investments'); // Always reload investments tab
+    } catch (error) {
+        console.error(`Failed to delete ${modelName}:`, error);
+        alert(`Error: ${error.message}`);
+    }
+}
+
+
 // --- Metrics Tab Specific Logic ---
 function loadMetricsTab() {
     const yearSelector = document.getElementById('metric-year-selector');
     const currentYear = new Date().getFullYear();
 
     // Populate year selector
-    yearSelector.innerHTML = '';
-    for (let i = currentYear + 1; i >= currentYear - 10; i--) {
-        const option = document.createElement('option');
-        option.value = i;
-        option.textContent = i;
-        if (i === currentYear) {
-            option.selected = true;
+    if (yearSelector.options.length === 0) {
+        for (let i = currentYear + 1; i >= currentYear - 10; i--) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            if (i === currentYear) {
+                option.selected = true;
+            }
+            yearSelector.appendChild(option);
         }
-        yearSelector.appendChild(option);
+        yearSelector.addEventListener('change', () => {
+            renderMetricsTable(yearSelector.value);
+        });
     }
 
-    yearSelector.addEventListener('change', () => {
-        renderMetricsTable(yearSelector.value);
-    });
-
-    renderMetricsTable(currentYear);
+    renderMetricsTable(yearSelector.value || currentYear);
 }
 
 async function renderMetricsTable(year) {
@@ -337,7 +533,6 @@ async function handleMetricSave(event) {
         button.disabled = false;
         row.classList.remove('incomplete', 'complete');
         row.classList.add(isComplete ? 'complete' : 'incomplete');
-        // Optional: Add a temporary success indicator
         row.classList.add('success-flash');
         setTimeout(() => row.classList.remove('success-flash'), 1500);
 
@@ -346,122 +541,5 @@ async function handleMetricSave(event) {
         alert(`Error: ${error.message}`);
         button.textContent = 'Save';
         button.disabled = false;
-    }
-}
-
-
-// --- Generic Modal Form Logic (for Investments, Tariffs) ---
-// This part remains unchanged for other tabs.
-async function openFormModal(modelName, id = null) { /* ... existing implementation ... */ }
-async function handleFormSubmit(event) { /* ... existing implementation ... */ }
-async function handleDelete(modelName, id) { /* ... existing implementation ... */ }
-// NOTE: I'm replacing the file, so I need to include the full content of the functions I'm keeping.
-// I will copy the content of the old functions here.
-
-async function openFormModal(modelName, id = null) {
-    const config = MODEL_CONFIG[modelName];
-    if (!config) return; // Should not happen for investments/tariffs
-    const modal = document.getElementById('form-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const form = document.getElementById('modal-form');
-
-    form.innerHTML = '';
-    form.dataset.model = modelName;
-    form.dataset.id = id || '';
-
-    let data = {};
-    if (id) {
-        modalTitle.textContent = `Edit ${config.title}`;
-        try {
-            // Note: The generic API endpoint is pluralized
-            data = await fetchAPI(`/${modelName}s/${id}`);
-        } catch (error) {
-            console.error(`Failed to fetch ${modelName} data:`, error);
-            alert(`Error: ${error.message}`);
-            return;
-        }
-    } else {
-        modalTitle.textContent = `Add New ${config.title}`;
-    }
-
-    for (const [key, fieldConfig] of Object.entries(config.fields)) {
-        const value = data[key] || '';
-        const input = document.createElement('input');
-        input.type = fieldConfig.type;
-        input.name = key;
-        input.id = `form-${key}`;
-        if (input.type === 'date' && value) {
-            input.value = value.split('T')[0];
-        } else {
-            input.value = value;
-        }
-        if (fieldConfig.step) input.step = fieldConfig.step;
-        if (fieldConfig.required) input.required = true;
-
-        const label = document.createElement('label');
-        label.htmlFor = `form-${key}`;
-        label.textContent = fieldConfig.label;
-
-        const formGroup = document.createElement('div');
-        formGroup.className = 'form-group';
-        formGroup.appendChild(label);
-        formGroup.appendChild(input);
-        form.appendChild(formGroup);
-    }
-
-    const submitButton = document.createElement('button');
-    submitButton.type = 'submit';
-    submitButton.textContent = id ? 'Update' : 'Create';
-    form.appendChild(submitButton);
-
-    modal.style.display = 'block';
-}
-
-async function handleFormSubmit(event) {
-    event.preventDefault();
-    const form = event.target;
-    const modelName = form.dataset.model;
-    const id = form.dataset.id;
-    if (!modelName) return;
-
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-
-    for (const key in data) {
-        if (data[key] === '') {
-            data[key] = null;
-        }
-    }
-
-    try {
-        if (id) {
-            await fetchAPI(`/${modelName}s/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(data),
-            });
-        } else {
-            await fetchAPI(`/${modelName}s`, {
-                method: 'POST',
-                body: JSON.stringify(data),
-            });
-        }
-        document.getElementById('form-modal').style.display = 'none';
-        loadDataForTab(`${modelName}s`);
-    } catch (error) {
-        console.error(`Failed to save ${modelName}:`, error);
-        alert(`Error: ${error.message}`);
-    }
-}
-
-async function handleDelete(modelName, id) {
-    if (!confirm(`Are you sure you want to delete this ${modelName}? This action cannot be undone.`)) {
-        return;
-    }
-    try {
-        await fetchAPI(`/${modelName}s/${id}`, { method: 'DELETE' });
-        loadDataForTab(`${modelName}s`);
-    } catch (error) {
-        console.error(`Failed to delete ${modelName}:`, error);
-        alert(`Error: ${error.message}`);
     }
 }

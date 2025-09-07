@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.models import models
-from app.schemas.solar_panel import SolarPanelCreate, SolarPanelUpdate
+from app.schemas.investment import SolarPanelInvestmentCreate
+from app.schemas.solar_panel import SolarPanelUpdate
 
 
 def get(db: Session, solar_panel_id: int) -> Optional[models.SolarPanel]:
@@ -19,7 +20,7 @@ def get_multi(db: Session, skip: int = 0, limit: int = 100) -> List[models.Solar
     return db.query(models.SolarPanel).offset(skip).limit(limit).all()
 
 
-def create(db: Session, *, obj_in: SolarPanelCreate) -> models.SolarPanel:
+def create(db: Session, *, obj_in: SolarPanelInvestmentCreate) -> models.SolarPanel:
     """
     Creates a new solar panel installation record.
     """

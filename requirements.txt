@@ -23,3 +23,6 @@ Jinja2
 
 # Logging
 python-json-logger
+
+# Testing
+pytest

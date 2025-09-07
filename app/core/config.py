@@ -18,7 +18,11 @@ class Settings:
         SECRET_KEY: The secret key for signing JWTs.
         ALGORITHM: The algorithm used for JWT encoding.
         ACCESS_TOKEN_EXPIRE_MINUTES: The expiry time for access tokens in minutes.
+        LOG_LEVEL: The logging level for the application.
     """
+    # Application settings
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "ERROR")
+
     # Admin credentials
     ADMIN_USER: str = os.getenv("ADMIN_USER", "admin")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "secret")

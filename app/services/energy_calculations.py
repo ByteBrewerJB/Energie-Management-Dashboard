@@ -29,7 +29,7 @@ def calculate_energy_flow(journal: MonthlyJournal) -> dict:
 
     # Home consumption is what's left after battery charging is accounted for.
     # Car charging is now handled separately and is not part of this calculation.
-    home_consumption_kwh = total_household_consumption_kwh
+    home_consumption_kwh = total_household_consumption_kwh - battery_charge_kwh
 
     if total_household_consumption_kwh > 0:
         self_sufficiency_ratio = self_consumption_kwh / total_household_consumption_kwh

@@ -28,18 +28,12 @@ def update_monthly_journal(
     month: int,
     *,
     db: Session = Depends(get_db),
-    journal_in: journal_schema.MonthlyJournalBase,
+    journal_in: journal_schema.MonthlyJournalUpdate,
     current_user: str = Depends(deps.get_current_user)
 ):
     """
     Update a monthly journal entry.
     """
-    if journal_in.year != year or journal_in.month != month:
-        raise HTTPException(
-            status_code=400,
-            detail="Path parameters do not match request body."
-        )
-
     journal = crud_journal.update_journal(db=db, year=year, month=month, obj_in=journal_in)
     if not journal:
         raise HTTPException(status_code=404, detail="Journal not found for this period.")

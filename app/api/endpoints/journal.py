@@ -9,16 +9,19 @@ from app.crud import crud_journal
 
 router = APIRouter()
 
+
 from decimal import Decimal
 from app.services import financial_calculations, energy_calculations
 
 @router.get("/{year}", response_model=List[journal_schema.FrontendChartData])
 def read_journals_for_year(
     year: int,
+
     db: Session = Depends(get_db),
     current_user: str = Depends(deps.get_current_user)
 ):
     """
+
     Retrieve all monthly journal entries for a specific year, run calculations,
     and return the data in the format expected by the frontend.
     """
@@ -69,6 +72,7 @@ def read_journals_for_year(
         response_data.append(chart_data)
 
     return response_data
+
 
 @router.put("/{year}/{month}", response_model=journal_schema.MonthlyJournal)
 def update_monthly_journal(

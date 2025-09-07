@@ -1,11 +1,53 @@
 // JouleJournal Dashboard - Main Application Logic
 
+const API_URL = '/api';
+
+/**
+ * A wrapper around the fetch API that adds the Authorization header
+ * and handles 401 Unauthorized responses by redirecting to the login page.
+ * @param {string} url The URL to fetch.
+ * @param {object} options The options for the fetch request.
+ * @returns {Promise<any>} A promise that resolves to the JSON response.
+ */
+async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('access_token');
+
+    const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`,
+    };
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401) {
+        // Token is invalid or expired
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+        // Throw an error to stop further processing
+        throw new Error('Session expired. Please log in again.');
+    }
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred.' }));
+        throw new Error(errorData.detail);
+    }
+
+    return response.json();
+}
+
+
 // Store chart instances to destroy them before re-rendering
 let energyBalanceChartInstance = null;
 let consumptionSplitChartInstance = null;
 let productionForecastChartInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return; // Stop executing script if not authenticated
+    }
+
     const themeSwitch = document.getElementById('checkbox');
     if (themeSwitch) {
         // Set the default theme to light. Check localStorage for 'dark-mode' override.
@@ -39,25 +81,57 @@ async function loadAllData() {
     const kpisDiv = document.getElementById('kpis');
     kpisDiv.innerHTML = '<p>Loading dashboard data...</p>';
 
-    // The backend refactoring has not been fully implemented yet on the analysis endpoints.
-    // For now, we will just implement the error message styling.
-    // In a real scenario, the URLs and data processing below would be updated.
+    const year = new Date().getFullYear();
 
     try {
-        // SIMULATING AN ERROR FOR DEMONSTRATION PURPOSES
-        throw new Error("Could not connect to the backend service.");
+        const timeseriesPromise = fetchWithAuth(`${API_URL}/metrics/${year}`);
+
+        const roiPromise = fetchWithAuth(`${API_URL}/investments`)
+            .then(investments => {
+                const solarPanel = investments.find(inv => inv.type === 'solar_panel');
+                if (solarPanel) {
+                    return fetchWithAuth(`${API_URL}/roi/solar_panels/${solarPanel.id}`);
+                }
+                return null; // No solar panel found
+            });
+
+        // As discovered during exploration, there is no forecast endpoint.
+        // We will provide a dummy structure to prevent the chart rendering from failing.
+        const forecastPromise = Promise.resolve({
+            forecast: {
+                forecast: [] // Empty array to signify no data
+            }
+        });
+
+        const [timeseriesData, roiData, forecastData] = await Promise.all([
+            timeseriesPromise,
+            roiPromise,
+            forecastPromise
+        ]);
+
+        if (!timeseriesData || timeseriesData.length === 0) {
+            kpisDiv.innerHTML = '<p>No dashboard data available for the current year. Please add data via the admin panel.</p>';
+            return;
+        }
+
+        // Render all the components with the fetched data
+        renderKPIs(timeseriesData, year);
+        renderRoiTracker(roiData);
+        renderEnergyBalanceChart(timeseriesData);
+        renderConsumptionSplitChart(timeseriesData);
+        renderProductionForecastChart(timeseriesData, forecastData);
 
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
-        // Use the new error message styling
+        // The fetchWithAuth function handles redirects for 401,
+        // so we only need to show a generic error for other issues.
         const errorHtml = `
             <div class="error-message">
                 <strong>Error loading dashboard</strong>
                 <p>${error.message}</p>
             </div>
         `;
-        // Place error in the main card container
-        if(kpiContainer) {
+        if (kpiContainer) {
             kpiContainer.innerHTML = errorHtml;
         } else {
             kpisDiv.innerHTML = errorHtml;

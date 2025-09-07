@@ -7,15 +7,12 @@ from app.core.logging_config import setup_logging
 setup_logging()
 
 from app.api.endpoints import (
-    analysis,
-    metrics,
-    tariffs,
     roi,
-    forecast,
     auth,
     solar_panels,
     batteries,
-    cars
+    cars,
+    journal
 )
 
 app = FastAPI(
@@ -44,11 +41,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Include the API routers
-app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
-app.include_router(metrics.router, prefix="/api", tags=["Metrics"])
-app.include_router(tariffs.router, prefix="/api", tags=["Tariffs"])
+app.include_router(journal.router, prefix="/api/journal", tags=["Journal"])
 app.include_router(roi.router, prefix="/api", tags=["ROI"])
-app.include_router(forecast.router, prefix="/api", tags=["Forecast"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(solar_panels.router, prefix="/api", tags=["Solar Panels"])
 app.include_router(batteries.router, prefix="/api", tags=["Batteries"])

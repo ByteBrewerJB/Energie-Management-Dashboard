@@ -76,9 +76,25 @@ def calculate_battery_roi(db: Session, battery_id: int) -> ROIStatus:
     cumulative_savings = Decimal(0.0)
 
     for journal in journals:
-        # Simplified arbitrage calculation
+        # More accurate arbitrage calculation that accounts for charging from solar
+        battery_charge_kwh = Decimal(journal.battery_charge_kwh or 0)
+        solar_production_kwh = Decimal(journal.solar_production_kwh or 0)
+        grid_feed_in_low_kwh = Decimal(journal.grid_feed_in_low_kwh or 0)
+        grid_feed_in_high_kwh = Decimal(journal.grid_feed_in_high_kwh or 0)
+
+        # Self-consumption is the solar energy produced that was not exported to the grid
+        total_grid_feed_in_kwh = grid_feed_in_low_kwh + grid_feed_in_high_kwh
+        self_consumption_kwh = solar_production_kwh - total_grid_feed_in_kwh
+
+        # Prioritize charging from free solar energy
+        charge_from_solar_kwh = min(battery_charge_kwh, self_consumption_kwh)
+        charge_from_grid_kwh = battery_charge_kwh - charge_from_solar_kwh
+
+        # Cost is only incurred for charging from the grid
+        charge_cost = charge_from_grid_kwh * journal.consumption_price_low_eur_kwh
+
+        # Benefit is from discharging during high-price periods
         avoided_cost = Decimal(journal.battery_discharge_kwh or 0) * journal.consumption_price_high_eur_kwh
-        charge_cost = Decimal(journal.battery_charge_kwh or 0) * journal.consumption_price_low_eur_kwh
 
         monthly_savings = avoided_cost - charge_cost
         cumulative_savings += monthly_savings

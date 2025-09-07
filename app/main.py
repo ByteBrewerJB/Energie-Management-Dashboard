@@ -2,7 +2,9 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.logging_config import setup_logging
+from app.core.config import settings
 
 setup_logging()
 
@@ -21,6 +23,15 @@ app = FastAPI(
     title="JouleJournal",
     description="Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbruik.",
     version="1.0.0"
+)
+
+# Set up CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Middleware to log requests

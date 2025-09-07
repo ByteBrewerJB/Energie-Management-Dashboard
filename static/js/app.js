@@ -1,5 +1,7 @@
 // JouleJournal Dashboard - Main Application Logic
 
+const API_URL = '/api';
+
 // Store chart instances to destroy them before re-rendering
 let energyBalanceChartInstance = null;
 let consumptionSplitChartInstance = null;
@@ -39,25 +41,56 @@ async function loadAllData() {
     const kpisDiv = document.getElementById('kpis');
     kpisDiv.innerHTML = '<p>Loading dashboard data...</p>';
 
-    // The backend refactoring has not been fully implemented yet on the analysis endpoints.
-    // For now, we will just implement the error message styling.
-    // In a real scenario, the URLs and data processing below would be updated.
+    const year = new Date().getFullYear();
 
     try {
-        // SIMULATING AN ERROR FOR DEMONSTRATION PURPOSES
-        throw new Error("Could not connect to the backend service.");
+        const timeseriesPromise = fetch(`${API_URL}/metrics/${year}`).then(res => res.json());
+
+        const roiPromise = fetch(`${API_URL}/investments`)
+            .then(res => res.json())
+            .then(investments => {
+                const solarPanel = investments.find(inv => inv.type === 'solar_panel');
+                if (solarPanel) {
+                    return fetch(`${API_URL}/roi/solar_panels/${solarPanel.id}`).then(res => res.json());
+                }
+                return null; // No solar panel found
+            });
+
+        // As discovered during exploration, there is no forecast endpoint.
+        // We will provide a dummy structure to prevent the chart rendering from failing.
+        const forecastPromise = Promise.resolve({
+            forecast: {
+                forecast: [] // Empty array to signify no data
+            }
+        });
+
+        const [timeseriesData, roiData, forecastData] = await Promise.all([
+            timeseriesPromise,
+            roiPromise,
+            forecastPromise
+        ]);
+
+        if (!timeseriesData || timeseriesData.length === 0) {
+            kpisDiv.innerHTML = '<p>No dashboard data available for the current year. Please add data via the admin panel.</p>';
+            return;
+        }
+
+        // Render all the components with the fetched data
+        renderKPIs(timeseriesData, year);
+        renderRoiTracker(roiData);
+        renderEnergyBalanceChart(timeseriesData);
+        renderConsumptionSplitChart(timeseriesData);
+        renderProductionForecastChart(timeseriesData, forecastData);
 
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
-        // Use the new error message styling
         const errorHtml = `
             <div class="error-message">
                 <strong>Error loading dashboard</strong>
-                <p>${error.message}</p>
+                <p>Could not connect to the backend service. Please ensure it is running and accessible.</p>
             </div>
         `;
-        // Place error in the main card container
-        if(kpiContainer) {
+        if (kpiContainer) {
             kpiContainer.innerHTML = errorHtml;
         } else {
             kpisDiv.innerHTML = errorHtml;

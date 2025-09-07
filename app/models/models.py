@@ -1,73 +1,56 @@
-from sqlalchemy import Column, Integer, String, Float, Date, Numeric
+from sqlalchemy import Column, Integer, String, Float, Date, Numeric, ForeignKey
+from sqlalchemy.orm import relationship
 from app.db.session import Base
 
 
-class Investment(Base):
+class SolarPanel(Base):
     """
-    SQLAlchemy model for an investment (e.g., solar panel installation).
-
-    Attributes:
-        id: Primary key.
-        description: A text description of the investment.
-        installation_date: The date the investment was installed.
-        total_cost_eur: The total cost of the investment in Euros.
-        total_power_wp: The total peak power of the installation in Watt-peak.
-        estimated_annual_production_kwh: The estimated annual energy
-                                           production in kWh.
+    SQLAlchemy model for a solar panel installation.
     """
-    __tablename__ = "investments"
+    __tablename__ = "solar_panels"
 
     id = Column(Integer, primary_key=True, index=True)
-    description = Column(String, nullable=False)
-    installation_date = Column(Date, nullable=False)
-    total_cost_eur = Column(Numeric(10, 2), nullable=False)
+    name = Column(String, nullable=False)
+    purchase_date = Column(Date, nullable=False)
+    purchase_cost_eur = Column(Numeric(10, 2), nullable=False)
     total_power_wp = Column(Integer, nullable=False)
-    estimated_annual_production_kwh = Column(Integer)
+    expected_annual_yield_kwh = Column(Integer)
+
+
+class Battery(Base):
+    """
+    SQLAlchemy model for a battery installation.
+    """
+    __tablename__ = "batteries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    brand = Column(String)
+    purchase_date = Column(Date, nullable=False)
+    purchase_cost_eur = Column(Numeric(10, 2), nullable=False)
+    capacity_kwh = Column(Float, nullable=False)
 
 
 class Tariff(Base):
     """
-    SQLAlchemy model for an energy tariff.
-
-    Attributes:
-        id: Primary key.
-        start_date: The date the tariff becomes active.
-        end_date: The date the tariff expires. Can be null for ongoing tariffs.
-        purchase_low_eur_kwh: The cost per kWh for low-rate electricity purchase.
-        purchase_high_eur_kwh: The cost per kWh for high-rate electricity purchase.
-        sale_eur_kwh: The revenue per kWh for selling electricity.
-        vat_percentage: The VAT percentage applicable to energy costs.
-        fixed_roi_rate_eur_kwh: An optional fixed rate for ROI calculations,
-                                in Euros per kWh.
+    SQLAlchemy model for monthly energy tariffs.
     """
     __tablename__ = "tariffs"
 
     id = Column(Integer, primary_key=True, index=True)
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=True)
-    purchase_low_eur_kwh = Column(Numeric(10, 5), nullable=False)
-    purchase_high_eur_kwh = Column(Numeric(10, 5), nullable=False)
-    sale_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    consumption_price_low_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    consumption_price_high_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    feed_in_tariff_low_eur_kwh = Column(Numeric(10, 5), nullable=False)
+    feed_in_tariff_high_eur_kwh = Column(Numeric(10, 5), nullable=False)
     vat_percentage = Column(Numeric(5, 2), default=0.21)
-    fixed_roi_rate_eur_kwh = Column(Numeric(10, 5), nullable=True)
+    fixed_roi_rate_eur_kwh = Column(Numeric(10, 5), nullable=True) # This might need re-evaluation
 
 
 class MonthlyMetric(Base):
     """
     SQLAlchemy model for monthly energy metrics.
-
-    Attributes:
-        id: Primary key.
-        period_start: The start date of the month for which metrics are recorded.
-        account_name: The name of the account associated with the metrics.
-        production_total_kwh: Total electricity produced in kWh.
-        import_low_kwh: Total low-rate electricity imported in kWh.
-        import_high_kwh: Total high-rate electricity imported in kWh.
-        export_total_kwh: Total electricity exported in kWh.
-        consumption_ev_kwh: Electricity consumed by an electric vehicle in kWh.
-        battery_charge_kwh: Electricity used to charge a battery in kWh.
-        battery_discharge_kwh: Electricity discharged from a battery in kWh.
-        monthly_prepayment_eur: The monthly prepayment amount in Euros.
     """
     __tablename__ = "monthly_metrics"
 
@@ -75,10 +58,36 @@ class MonthlyMetric(Base):
     period_start = Column(Date, nullable=False, unique=True)
     account_name = Column(String, nullable=False)
     production_total_kwh = Column(Float)
-    import_low_kwh = Column(Float)
-    import_high_kwh = Column(Float)
-    export_total_kwh = Column(Float)
-    consumption_ev_kwh = Column(Float)
+    grid_consumption_low_kwh = Column(Float)
+    grid_consumption_high_kwh = Column(Float)
+    grid_feed_in_low_kwh = Column(Float)
+    grid_feed_in_high_kwh = Column(Float)
     battery_charge_kwh = Column(Float, default=0.0)
     battery_discharge_kwh = Column(Float, default=0.0)
     monthly_prepayment_eur = Column(Numeric(10, 2))
+
+
+class Car(Base):
+    """
+    SQLAlchemy model for a car.
+    """
+    __tablename__ = "cars"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
+    usage_records = relationship("CarUsage", back_populates="car")
+
+
+class CarUsage(Base):
+    """
+    SQLAlchemy model for monthly car usage data.
+    """
+    __tablename__ = "car_usage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    car_id = Column(Integer, ForeignKey("cars.id"), nullable=False)
+    period_start = Column(Date, nullable=False)
+    total_charged_kwh = Column(Float, nullable=False)
+    reimbursement_rate_eur_per_kwh = Column(Numeric(10, 5), nullable=False)
+
+    car = relationship("Car", back_populates="usage_records")

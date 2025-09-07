@@ -30,6 +30,20 @@ def get_journal_by_year_and_month(db: Session, *, year: int, month: int) -> Opti
     return db.query(models.MonthlyJournal).filter(models.MonthlyJournal.year == year, models.MonthlyJournal.month == month).first()
 
 
+def get_by_year(db: Session, *, year: int) -> List[models.MonthlyJournal]:
+    """
+    Retrieves all monthly journals for a specific year, ordered by month.
+    """
+    return db.query(models.MonthlyJournal).filter(models.MonthlyJournal.year == year).order_by(models.MonthlyJournal.month).all()
+
+
+def get_all_years(db: Session) -> List[int]:
+    """
+    Retrieves all unique years from the monthly journals, sorted in descending order.
+    """
+    return sorted([y for y, in db.query(models.MonthlyJournal.year).distinct()], reverse=True)
+
+
 def get_journals(db: Session, skip: int = 0, limit: int = 100) -> List[models.MonthlyJournal]:
     """
     Retrieves multiple monthly journals with pagination.

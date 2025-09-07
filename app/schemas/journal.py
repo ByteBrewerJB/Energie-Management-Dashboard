@@ -26,14 +26,16 @@ class MonthlyJournalBase(BaseModel):
     grid_consumption_high_kwh: Optional[float] = None
     grid_feed_in_low_kwh: Optional[float] = None
     grid_feed_in_high_kwh: Optional[float] = None
-    consumption_price_low_eur_kwh: Optional[Decimal] = None
-    consumption_price_high_eur_kwh: Optional[Decimal] = None
-    feed_in_tariff_low_eur_kwh: Optional[Decimal] = None
-    feed_in_tariff_high_eur_kwh: Optional[Decimal] = None
+    consumption_price_low_eur_kwh: Optional[float] = None
+    consumption_price_high_eur_kwh: Optional[float] = None
+    feed_in_tariff_low_eur_kwh: Optional[float] = None
+    feed_in_tariff_high_eur_kwh: Optional[float] = None
     solar_production_kwh: Optional[float] = None
     battery_charge_kwh: Optional[float] = None
     battery_discharge_kwh: Optional[float] = None
-    monthly_prepayment_eur: Optional[Decimal] = None
+    monthly_prepayment_eur: Optional[float] = None
+
+    model_config = ConfigDict(from_attributes=True, json_encoders={Decimal: float})
 
 class MonthlyJournalCreate(MonthlyJournalBase):
     car_entries: List[CarJournalEntryCreate] = []
@@ -44,14 +46,16 @@ class MonthlyJournalUpdate(BaseModel):
     grid_consumption_high_kwh: Optional[float] = None
     grid_feed_in_low_kwh: Optional[float] = None
     grid_feed_in_high_kwh: Optional[float] = None
-    consumption_price_low_eur_kwh: Optional[Decimal] = None
-    consumption_price_high_eur_kwh: Optional[Decimal] = None
-    feed_in_tariff_low_eur_kwh: Optional[Decimal] = None
-    feed_in_tariff_high_eur_kwh: Optional[Decimal] = None
+    consumption_price_low_eur_kwh: Optional[float] = None
+    consumption_price_high_eur_kwh: Optional[float] = None
+    feed_in_tariff_low_eur_kwh: Optional[float] = None
+    feed_in_tariff_high_eur_kwh: Optional[float] = None
     solar_production_kwh: Optional[float] = None
     battery_charge_kwh: Optional[float] = None
     battery_discharge_kwh: Optional[float] = None
-    monthly_prepayment_eur: Optional[Decimal] = None
+    monthly_prepayment_eur: Optional[float] = None
+
+    model_config = ConfigDict(from_attributes=True, json_encoders={Decimal: float})
 
 
 class MonthlyJournal(MonthlyJournalBase):
@@ -66,11 +70,13 @@ class MonthlyStatement(BaseModel):
     """
     Schema for returning the calculated financial results of a journal entry.
     """
-    total_consumption_cost_eur: Decimal
-    total_feed_in_revenue_eur: Decimal
-    net_energy_cost_eur: Decimal
-    total_car_reimbursement_eur: Decimal
-    final_settlement_eur: Decimal
+    total_consumption_cost_eur: float
+    total_feed_in_revenue_eur: float
+    net_energy_cost_eur: float
+    total_car_reimbursement_eur: float
+    final_settlement_eur: float
+
+    model_config = ConfigDict(from_attributes=True, json_encoders={Decimal: float})
 
 # --- Combined Schema for API Response ---
 
@@ -81,3 +87,5 @@ class JournalWithStatement(BaseModel):
     """
     journal_data: MonthlyJournal
     financial_statement: MonthlyStatement
+
+    model_config = ConfigDict(from_attributes=True, json_encoders={Decimal: float})

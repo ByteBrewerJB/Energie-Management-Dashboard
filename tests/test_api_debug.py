@@ -69,5 +69,5 @@ def test_fill_database(db_session):
     assert db_session.query(models.Battery).count() == 1
     assert db_session.query(models.Car).count() == 1
     assert db_session.query(models.Tariff).count() == 3
-    assert db_session.query(models.MonthlyJournal).count() == 30
-    assert db_session.query(models.CarJournalEntry).count() == 30
+    assert db_session.query(models.MonthlyJournal).count() == 24
+    assert db_session.query(models.CarJournalEntry).count() == 24

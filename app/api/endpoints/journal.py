@@ -9,6 +9,31 @@ from app.crud import crud_journal
 
 router = APIRouter()
 
+
+@router.get("/years", response_model=List[int])
+def get_journal_years(
+    db: Session = Depends(get_db),
+    current_user: str = Depends(deps.get_current_user)
+):
+    """
+    Retrieve all unique years from journal entries.
+    """
+    return crud_journal.get_all_years(db=db)
+
+
+@router.get("/{year}", response_model=List[journal_schema.MonthlyJournal])
+def read_journals_by_year(
+    year: int,
+    db: Session = Depends(get_db),
+    current_user: str = Depends(deps.get_current_user)
+):
+    """
+    Retrieve journal entries for a specific year.
+    """
+    journals = crud_journal.get_by_year(db=db, year=year)
+    return journals
+
+
 @router.get("/", response_model=List[journal_schema.MonthlyJournal])
 def read_journals(
     db: Session = Depends(get_db),

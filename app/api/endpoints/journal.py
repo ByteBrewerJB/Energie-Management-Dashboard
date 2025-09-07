@@ -1,15 +1,16 @@
-from decimal import Decimal
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 
 from app.db.session import get_db
 from app.api import deps
 from app.schemas import journal as journal_schema
-from app.crud.crud_journal import get_or_create_journals_for_year
-from app.services import financial_calculations, energy_calculations
+from app.crud import crud_journal
 
 router = APIRouter()
+
+from decimal import Decimal
+from app.services import financial_calculations, energy_calculations
 
 @router.get("/{year}", response_model=List[journal_schema.FrontendChartData])
 def read_journals_for_year(
@@ -21,7 +22,7 @@ def read_journals_for_year(
     Retrieve all monthly journal entries for a specific year, run calculations,
     and return the data in the format expected by the frontend.
     """
-    db_journals = get_or_create_journals_for_year(db, year=year)
+    db_journals = crud_journal.get_or_create_journals_for_year(db, year=year)
 
     response_data = []
     for journal in db_journals:
@@ -81,9 +82,7 @@ def update_monthly_journal(
     """
     Update a monthly journal entry.
     """
-    # This import is moved here to avoid circular dependency issues if they arise.
-    from app.crud.crud_journal import update_journal
-    journal = update_journal(db=db, year=year, month=month, obj_in=journal_in)
+    journal = crud_journal.update_journal(db=db, year=year, month=month, obj_in=journal_in)
     if not journal:
         raise HTTPException(status_code=404, detail="Journal not found for this period.")
     return journal

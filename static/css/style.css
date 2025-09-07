@@ -2,14 +2,23 @@
    JouleJournal - Redesigned Stylesheet
    Author: Jules
    Date: 2025-09-07
+   Notes: Merge conflicts resolved between branches
+          feat/full-dashboard-refactor and feat/energie-dashboard-v1
 */
 
 /* 1. FONT IMPORT */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* 2. CSS CUSTOM PROPERTIES (VARIABLES) - Dark Mode First */
 :root {
-    /* Color Palette */
+    /* Legacy palette (kept for compatibility with older components) */
+    --primary-color: #0052D4;
+    --primary-light-color: #4364F7;
+    --primary-lighter-color: #6FB1FC;
+    --secondary-color: #36A2EB;
+    --tertiary-color: #4BC0C0;
+
+    /* Dark theme palette */
     --background-color: #1A202C;
     --surface-color: #2D3748; /* For cards/components */
     --primary-text-color: #F7FAFC;
@@ -50,7 +59,8 @@
 
 body {
     font-family: var(--font-family-sans);
-    line-height: 1.6;
+    line-height: 1.7;
+    letter-spacing: 0.5px;
     background-color: var(--background-color);
     color: var(--primary-text-color);
     margin: 0;
@@ -169,34 +179,6 @@ footer {
     border-top: 1px solid var(--border-color);
 }
 
-/* Theme Switcher (basic styling for now, will be improved in next step) */
-.theme-switch-wrapper {
-    display: flex;
-    align-items: center;
-}
-
-.theme-switch {
-    /* Modern look will be applied in the next step */
-    display: inline-block;
-    height: 24px;
-    position: relative;
-    width: 50px;
-}
-
-/* Error message styling */
-.error-message {
-    color: var(--error-color);
-    background-color: rgba(221, 107, 32, 0.1);
-    border: 1px solid var(--error-color);
-    padding: var(--spacing-m);
-    border-radius: var(--border-radius);
-    text-align: center;
-}
-
-.error-message::before {
-    content: "⚠️ "; /* Placeholder for a better icon */
-}
-
 /* 6. COMPONENT-SPECIFIC STYLES */
 
 /* KPI Items */
@@ -255,7 +237,12 @@ footer {
     color: var(--secondary-text-color);
 }
 
-/* Modern Theme Switcher */
+/* 7. Modern Theme Switcher */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+}
+
 .theme-switch {
     display: inline-block;
     height: 30px;
@@ -263,9 +250,7 @@ footer {
     width: 56px;
 }
 
-.theme-switch input {
-    display:none;
-}
+.theme-switch input { display: none; }
 
 .slider {
     background-color: var(--background-color);
@@ -299,10 +284,19 @@ input:checked + .slider:before {
     background-color: var(--primary-text-color);
 }
 
-.slider.round {
-    border-radius: 34px;
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
+
+/* 8. Errors */
+.error-message {
+    color: var(--error-color);
+    background-color: rgba(221, 107, 32, 0.1);
+    border: 1px solid var(--error-color);
+    padding: var(--spacing-m);
+    border-radius: var(--border-radius);
+    text-align: center;
 }
 
-.slider.round:before {
-    border-radius: 50%;
+.error-message::before {
+    content: "⚠️ "; /* Placeholder for a better icon */
 }

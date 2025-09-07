@@ -18,11 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tab navigation
     const tabs = document.querySelectorAll('.tab-link');
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetTab = tab.dataset.tab;
+        tab.addEventListener('click', (e) => {
+            const targetTab = e.currentTarget.dataset.tab;
             document.querySelector('.tab-link.active').classList.remove('active');
             document.querySelector('.tab-content.active').classList.remove('active');
-            tab.classList.add('active');
+            e.currentTarget.classList.add('active');
             document.getElementById(targetTab).classList.add('active');
             loadDataForTab(targetTab);
         });
@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listeners for "Add New" buttons
     document.querySelectorAll('.add-new-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Use currentTarget to get the button that has the listener
             const model = e.currentTarget.dataset.model;
             if (model) {
                 openFormModal(model);
@@ -270,7 +269,21 @@ const MODEL_CONFIG = {
         }
     },
     metric: {
-        // ... (metric config remains unchanged)
+        title: 'Monthly Metric',
+        fields: {
+            grid_consumption_low_kwh: { label: 'Grid Cons. Low (kWh)', type: 'number', step: '0.01' },
+            grid_consumption_high_kwh: { label: 'Grid Cons. High (kWh)', type: 'number', step: '0.01' },
+            grid_feed_in_low_kwh: { label: 'Grid Feed-in Low (kWh)', type: 'number', step: '0.01' },
+            grid_feed_in_high_kwh: { label: 'Grid Feed-in High (kWh)', type: 'number', step: '0.01' },
+            consumption_price_low_eur_kwh: { label: 'Cons. Price Low (€/kWh)', type: 'number', step: '0.00001' },
+            consumption_price_high_eur_kwh: { label: 'Cons. Price High (€/kWh)', type: 'number', step: '0.00001' },
+            feed_in_tariff_low_eur_kwh: { label: 'Feed-in Low (€/kWh)', type: 'number', step: '0.00001' },
+            feed_in_tariff_high_eur_kwh: { label: 'Feed-in High (€/kWh)', type: 'number', step: '0.00001' },
+            solar_production_kwh: { label: 'Solar Prod. (kWh)', type: 'number', step: '0.01' },
+            battery_charge_kwh: { label: 'Battery Charge (kWh)', type: 'number', step: '0.01' },
+            battery_discharge_kwh: { label: 'Battery Discharge (kWh)', type: 'number', step: '0.01' },
+            monthly_prepayment_eur: { label: 'Prepayment (€)', type: 'number', step: '0.01' },
+        }
     }
 };
 
@@ -394,28 +407,27 @@ async function handleDelete(modelName, id) {
 
 
 // --- Metrics Tab Specific Logic ---
-// ... (This part remains unchanged)
 function loadMetricsTab() {
     const yearSelector = document.getElementById('metric-year-selector');
     const currentYear = new Date().getFullYear();
 
     // Populate year selector
-    yearSelector.innerHTML = '';
-    for (let i = currentYear + 1; i >= currentYear - 10; i--) {
-        const option = document.createElement('option');
-        option.value = i;
-        option.textContent = i;
-        if (i === currentYear) {
-            option.selected = true;
+    if (yearSelector.options.length === 0) {
+        for (let i = currentYear + 1; i >= currentYear - 10; i--) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            if (i === currentYear) {
+                option.selected = true;
+            }
+            yearSelector.appendChild(option);
         }
-        yearSelector.appendChild(option);
+        yearSelector.addEventListener('change', () => {
+            renderMetricsTable(yearSelector.value);
+        });
     }
 
-    yearSelector.addEventListener('change', () => {
-        renderMetricsTable(yearSelector.value);
-    });
-
-    renderMetricsTable(currentYear);
+    renderMetricsTable(yearSelector.value || currentYear);
 }
 
 async function renderMetricsTable(year) {
@@ -428,18 +440,13 @@ async function renderMetricsTable(year) {
         table.className = 'editable-table';
         const thead = document.createElement('thead');
         const tbody = document.createElement('tbody');
-        const fields = MODEL_CONFIG.metric; // Simplified access
-        if (!fields) {
-            container.innerHTML = '<p>Metric configuration not found.</p>';
-            return;
-        }
-
+        const fields = MODEL_CONFIG.metric.fields;
 
         // Header
         const headerRow = document.createElement('tr');
         headerRow.innerHTML = '<th>Month</th>';
-        for (const key in fields.fields) {
-            headerRow.innerHTML += `<th>${fields.fields[key].label}</th>`;
+        for (const key in fields) {
+            headerRow.innerHTML += `<th>${fields[key].label}</th>`;
         }
         headerRow.innerHTML += '<th>Actions</th>';
         thead.appendChild(headerRow);
@@ -452,10 +459,10 @@ async function renderMetricsTable(year) {
             row.innerHTML = `<td>${monthName}</td>`;
 
             let isComplete = true;
-            for (const key in fields.fields) {
+            for (const key in fields) {
                 const value = item[key] === null ? '' : item[key];
                 if (value === '') isComplete = false;
-                const fieldConfig = fields.fields[key];
+                const fieldConfig = fields[key];
                 row.innerHTML += `
                     <td>
                         <input

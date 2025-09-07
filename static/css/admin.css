@@ -225,6 +225,13 @@ tr:hover {
     margin-bottom: 20px;
 }
 
+.add-new-btn .btn-icon {
+    margin-right: 8px;
+    vertical-align: middle;
+    width: 16px;
+    height: 16px;
+}
+
 .toolbar label {
     margin-right: 10px;
 }

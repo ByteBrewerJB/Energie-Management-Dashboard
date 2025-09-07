@@ -35,6 +35,27 @@ async function fetchWithAuth(url, options = {}) {
     return response.json();
 }
 
+/**
+ * A robust parseFloat function that handles various input types.
+ * @param {*} value The value to parse.
+ * @returns {number} The parsed number, or 0 if invalid.
+ */
+function safeParseFloat(value) {
+    if (typeof value === 'number') {
+        return value;
+    }
+    if (typeof value !== 'string') {
+        return 0;
+    }
+    // Remove characters that commonly cause issues: currency symbols, thousands separators.
+    const cleanedValue = value.replace(/[€$,]/g, '').trim();
+    if (cleanedValue === '') {
+        return 0;
+    }
+    const num = parseFloat(cleanedValue);
+    return isNaN(num) ? 0 : num;
+}
+
 
 // Store chart instances to destroy them before re-rendering
 let energyBalanceChartInstance = null;
@@ -149,8 +170,8 @@ function renderKPIs(timeseriesData, year) {
         return;
     }
 
-    const totalNetCosts = timeseriesData.reduce((sum, data) => sum + parseFloat(data.financials.net_costs || 0), 0);
-    const totalSelfSufficiency = timeseriesData.reduce((sum, data) => sum + parseFloat(data.energy_flow.self_sufficiency_ratio || 0), 0);
+    const totalNetCosts = timeseriesData.reduce((sum, data) => sum + safeParseFloat(data.financials.net_costs), 0);
+    const totalSelfSufficiency = timeseriesData.reduce((sum, data) => sum + safeParseFloat(data.energy_flow.self_sufficiency_ratio), 0);
     const averageSelfSufficiency = totalSelfSufficiency / timeseriesData.length * 100; // as percentage
 
     kpisDiv.innerHTML = `
@@ -175,7 +196,9 @@ function renderRoiTracker(roiData) {
         return;
     }
 
-    const { progress_percentage, cumulative_savings, remaining_balance } = roiData;
+    const progress_percentage = safeParseFloat(roiData.progress_percentage);
+    const cumulative_savings = safeParseFloat(roiData.cumulative_savings);
+    const remaining_balance = safeParseFloat(roiData.remaining_balance);
 
     roiDiv.innerHTML = `
         <div class="roi-summary">
@@ -204,17 +227,17 @@ function renderEnergyBalanceChart(timeseriesData) {
     const datasets = [
         {
             label: 'Import (kWh)',
-            data: timeseriesData.map(d => parseFloat(d.energy_flow.import_total_kwh || 0)),
+            data: timeseriesData.map(d => safeParseFloat(d.energy_flow.import_total_kwh)),
             backgroundColor: '#FF6384',
         },
         {
             label: 'Eigen Verbruik (kWh)',
-            data: timeseriesData.map(d => parseFloat(d.energy_flow.self_consumption_kwh || 0)),
+            data: timeseriesData.map(d => safeParseFloat(d.energy_flow.self_consumption_kwh)),
             backgroundColor: '#36A2EB',
         },
         {
             label: 'Export (kWh)',
-            data: timeseriesData.map(d => parseFloat(d.metric.export_total_kwh || 0)),
+            data: timeseriesData.map(d => safeParseFloat(d.metric.export_total_kwh)),
             backgroundColor: '#FFCE56',
         }
     ];
@@ -246,8 +269,8 @@ function renderEnergyBalanceChart(timeseriesData) {
 function renderConsumptionSplitChart(timeseriesData) {
     const ctx = document.getElementById('consumptionSplitChart').getContext('2d');
 
-    const totalHomeConsumption = timeseriesData.reduce((sum, d) => sum + parseFloat(d.energy_flow.home_consumption_kwh || 0), 0);
-    const totalEvConsumption = timeseriesData.reduce((sum, d) => sum + parseFloat(d.metric.consumption_ev_kwh || 0), 0);
+    const totalHomeConsumption = timeseriesData.reduce((sum, d) => sum + safeParseFloat(d.energy_flow.home_consumption_kwh), 0);
+    const totalEvConsumption = timeseriesData.reduce((sum, d) => sum + safeParseFloat(d.metric.consumption_ev_kwh), 0);
 
     if (consumptionSplitChartInstance) {
         consumptionSplitChartInstance.destroy();
@@ -278,8 +301,8 @@ function renderConsumptionSplitChart(timeseriesData) {
 function renderProductionForecastChart(timeseriesData, forecastData) {
     const ctx = document.getElementById('productionForecastChart').getContext('2d');
 
-    const labels = forecastData.forecast.map(f => f.month);
-    const forecastValues = forecastData.forecast.map(f => f.kwh);
+    const labels = forecastData.forecast.forecast.map(f => f.month);
+    const forecastValues = forecastData.forecast.forecast.map(f => f.kwh);
 
     // Create a map for quick lookup of actual production by month name
     const actualsMap = new Map();

@@ -2,12 +2,52 @@
 
 const API_URL = '/api';
 
+/**
+ * A wrapper around the fetch API that adds the Authorization header
+ * and handles 401 Unauthorized responses by redirecting to the login page.
+ * @param {string} url The URL to fetch.
+ * @param {object} options The options for the fetch request.
+ * @returns {Promise<any>} A promise that resolves to the JSON response.
+ */
+async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('access_token');
+
+    const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`,
+    };
+
+    const response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401) {
+        // Token is invalid or expired
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+        // Throw an error to stop further processing
+        throw new Error('Session expired. Please log in again.');
+    }
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred.' }));
+        throw new Error(errorData.detail);
+    }
+
+    return response.json();
+}
+
+
 // Store chart instances to destroy them before re-rendering
 let energyBalanceChartInstance = null;
 let consumptionSplitChartInstance = null;
 let productionForecastChartInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return; // Stop executing script if not authenticated
+    }
+
     const themeSwitch = document.getElementById('checkbox');
     if (themeSwitch) {
         // Set the default theme to light. Check localStorage for 'dark-mode' override.
@@ -44,14 +84,13 @@ async function loadAllData() {
     const year = new Date().getFullYear();
 
     try {
-        const timeseriesPromise = fetch(`${API_URL}/metrics/${year}`).then(res => res.json());
+        const timeseriesPromise = fetchWithAuth(`${API_URL}/metrics/${year}`);
 
-        const roiPromise = fetch(`${API_URL}/investments`)
-            .then(res => res.json())
+        const roiPromise = fetchWithAuth(`${API_URL}/investments`)
             .then(investments => {
                 const solarPanel = investments.find(inv => inv.type === 'solar_panel');
                 if (solarPanel) {
-                    return fetch(`${API_URL}/roi/solar_panels/${solarPanel.id}`).then(res => res.json());
+                    return fetchWithAuth(`${API_URL}/roi/solar_panels/${solarPanel.id}`);
                 }
                 return null; // No solar panel found
             });
@@ -84,10 +123,12 @@ async function loadAllData() {
 
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
+        // The fetchWithAuth function handles redirects for 401,
+        // so we only need to show a generic error for other issues.
         const errorHtml = `
             <div class="error-message">
                 <strong>Error loading dashboard</strong>
-                <p>Could not connect to the backend service. Please ensure it is running and accessible.</p>
+                <p>${error.message}</p>
             </div>
         `;
         if (kpiContainer) {

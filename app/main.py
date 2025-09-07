@@ -2,7 +2,17 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api.endpoints import analysis, metrics, investments, tariffs, roi, forecast, auth
+from app.api.endpoints import (
+    analysis,
+    metrics,
+    tariffs,
+    roi,
+    forecast,
+    auth,
+    solar_panels,
+    batteries,
+    cars
+)
 
 app = FastAPI(
     title="JouleJournal",
@@ -19,11 +29,13 @@ templates = Jinja2Templates(directory="templates")
 # Include the API routers
 app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
 app.include_router(metrics.router, prefix="/api", tags=["Metrics"])
-app.include_router(investments.router, prefix="/api", tags=["Investments"])
 app.include_router(tariffs.router, prefix="/api", tags=["Tariffs"])
 app.include_router(roi.router, prefix="/api", tags=["ROI"])
 app.include_router(forecast.router, prefix="/api", tags=["Forecast"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(solar_panels.router, prefix="/api", tags=["Solar Panels"])
+app.include_router(batteries.router, prefix="/api", tags=["Batteries"])
+app.include_router(cars.router, prefix="/api", tags=["Cars"])
 
 
 @app.get("/", tags=["Root"])

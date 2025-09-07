@@ -2,36 +2,42 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.roi import ROIMethodResult, ROIStatus
+from app.api import deps
+from app.schemas.roi import ROIStatus
 from app.services import roi_calculations
 
 router = APIRouter()
 
 
-@router.get("/roi/{investment_id}", response_model=ROIMethodResult)
-def get_roi_status(investment_id: int, db: Session = Depends(get_db)):
+@router.get("/roi/solar_panels/{solar_panel_id}", response_model=ROIStatus)
+def get_solar_panel_roi_status(
+    solar_panel_id: int,
+    db: Session = Depends(get_db),
+    current_user: str = Depends(deps.get_current_user)
+):
     """
-    Retrieves the ROI status for a specific investment.
-
-    This endpoint returns the result of Method 1 for ROI calculation, which
-    is based on avoided costs and export revenue.
-
-    Args:
-        investment_id: The ID of the investment to analyze.
-        db: The database session dependency.
-
-    Returns:
-        A ROIMethodResult object detailing the ROI status based on Method 1.
-
-    Raises:
-        HTTPException: 404 Not Found if the investment is not found or has
-                       no metrics available for calculation.
+    Retrieves the ROI status for a specific solar panel installation.
     """
-    roi_status: ROIStatus | None = roi_calculations.calculate_roi_status(
-        db, investment_id
-    )
+    roi_status = roi_calculations.calculate_solar_panel_roi(db, solar_panel_id=solar_panel_id)
     if not roi_status:
         raise HTTPException(
-            status_code=404, detail="Investment not found or no metrics available."
+            status_code=404, detail="Solar panel installation not found or no metrics available."
         )
-    return roi_status.method_1
+    return roi_status
+
+
+@router.get("/roi/batteries/{battery_id}", response_model=ROIStatus)
+def get_battery_roi_status(
+    battery_id: int,
+    db: Session = Depends(get_db),
+    current_user: str = Depends(deps.get_current_user)
+):
+    """
+    Retrieves the ROI status for a specific battery installation.
+    """
+    roi_status = roi_calculations.calculate_battery_roi(db, battery_id=battery_id)
+    if not roi_status:
+        raise HTTPException(
+            status_code=404, detail="Battery installation not found or no metrics available."
+        )
+    return roi_status

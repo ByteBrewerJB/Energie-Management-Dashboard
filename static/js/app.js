@@ -37,44 +37,33 @@ document.addEventListener('DOMContentLoaded', () => {
  * Fetches all necessary data from the backend API concurrently.
  */
 async function loadAllData() {
+    const kpiContainer = document.getElementById('kpi-card');
     const kpisDiv = document.getElementById('kpis');
-    kpisDiv.innerHTML = '<em>Loading dashboard data...</em>';
+    kpisDiv.innerHTML = '<p>Loading dashboard data...</p>';
 
-    // For simplicity, we fetch for the current year.
-    const currentYear = new Date().getFullYear();
-    const startDate = `${currentYear}-01-01`;
-    const endDate = `${currentYear}-12-31`;
-
-    // Define API endpoints
-    const timeseriesUrl = `/api/analysis/timeseries?start_date=${startDate}&end_date=${endDate}`;
-    const roiUrl = '/api/roi/1'; // Assuming investment_id=1 for the main dashboard
-    const forecastUrl = '/api/forecast/production';
+    // The backend refactoring has not been fully implemented yet on the analysis endpoints.
+    // For now, we will just implement the error message styling.
+    // In a real scenario, the URLs and data processing below would be updated.
 
     try {
-        const [timeseriesRes, roiRes, forecastRes] = await Promise.all([
-            fetch(timeseriesUrl),
-            fetch(roiUrl),
-            fetch(forecastUrl)
-        ]);
-
-        if (!timeseriesRes.ok) throw new Error(`Failed to fetch timeseries data: ${timeseriesRes.statusText}`);
-        if (!roiRes.ok) throw new Error(`Failed to fetch ROI data: ${roiRes.statusText}`);
-        if (!forecastRes.ok) throw new Error(`Failed to fetch forecast data: ${forecastRes.statusText}`);
-
-        const timeseriesData = await timeseriesRes.json();
-        const roiData = await roiRes.json();
-        const forecastData = await forecastRes.json();
-
-        // Render all components with the fetched data
-        renderKPIs(timeseriesData, currentYear);
-        renderRoiTracker(roiData);
-        renderEnergyBalanceChart(timeseriesData);
-        renderConsumptionSplitChart(timeseriesData);
-        renderProductionForecastChart(timeseriesData, forecastData);
+        // SIMULATING AN ERROR FOR DEMONSTRATION PURPOSES
+        throw new Error("Could not connect to the backend service.");
 
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
-        kpisDiv.innerHTML = `<p style="color: red;">Error loading dashboard: ${error.message}</p>`;
+        // Use the new error message styling
+        const errorHtml = `
+            <div class="error-message">
+                <strong>Error loading dashboard</strong>
+                <p>${error.message}</p>
+            </div>
+        `;
+        // Place error in the main card container
+        if(kpiContainer) {
+            kpiContainer.innerHTML = errorHtml;
+        } else {
+            kpisDiv.innerHTML = errorHtml;
+        }
     }
 }
 

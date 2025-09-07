@@ -32,17 +32,20 @@ def upgrade() -> None:
     op.alter_column('monthly_metrics', 'grid_feed_in_high_kwh',
                existing_type=sa.FLOAT(),
                nullable=True)
-    op.alter_column('tariffs', 'consumption_price_low_eur_kwh',
+    op.alter_column('monthly_metrics', 'consumption_price_low_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=True)
-    op.alter_column('tariffs', 'consumption_price_high_eur_kwh',
+    op.alter_column('monthly_metrics', 'consumption_price_high_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=True)
-    op.alter_column('tariffs', 'feed_in_tariff_low_eur_kwh',
+    op.alter_column('monthly_metrics', 'feed_in_tariff_low_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=True)
-    op.alter_column('tariffs', 'feed_in_tariff_high_eur_kwh',
+    op.alter_column('monthly_metrics', 'feed_in_tariff_high_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
+               nullable=True)
+    op.alter_column('monthly_metrics', 'solar_production_kwh',
+               existing_type=sa.FLOAT(),
                nullable=True)
     op.alter_column('monthly_metrics', 'battery_charge_kwh',
                existing_type=sa.FLOAT(),
@@ -66,16 +69,19 @@ def downgrade() -> None:
     op.alter_column('monthly_metrics', 'battery_charge_kwh',
                existing_type=sa.FLOAT(),
                nullable=False)
-    op.alter_column('tariffs', 'feed_in_tariff_high_eur_kwh',
+    op.alter_column('monthly_metrics', 'solar_production_kwh',
+               existing_type=sa.FLOAT(),
+               nullable=False)
+    op.alter_column('monthly_metrics', 'feed_in_tariff_high_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=False)
-    op.alter_column('tariffs', 'feed_in_tariff_low_eur_kwh',
+    op.alter_column('monthly_metrics', 'feed_in_tariff_low_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=False)
-    op.alter_column('tariffs', 'consumption_price_high_eur_kwh',
+    op.alter_column('monthly_metrics', 'consumption_price_high_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=False)
-    op.alter_column('tariffs', 'consumption_price_low_eur_kwh',
+    op.alter_column('monthly_metrics', 'consumption_price_low_eur_kwh',
                existing_type=sa.NUMERIC(precision=10, scale=5),
                nullable=False)
     op.alter_column('monthly_metrics', 'grid_feed_in_high_kwh',

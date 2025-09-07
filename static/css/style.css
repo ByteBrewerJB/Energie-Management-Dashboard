@@ -249,56 +249,6 @@ footer {
     color: var(--secondary-text-color);
 }
 
-/* 7. Modern Theme Switcher */
-.theme-switch-wrapper {
-    display: flex;
-    align-items: center;
-}
-
-.theme-switch {
-    display: inline-block;
-    height: 30px;
-    position: relative;
-    width: 56px;
-}
-
-.theme-switch input { display: none; }
-
-.slider {
-    background-color: var(--background-color);
-    border: 1px solid var(--border-color);
-    bottom: 0;
-    cursor: pointer;
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
-    transition: .4s;
-}
-
-.slider:before {
-    background-color: var(--secondary-text-color);
-    bottom: 4px;
-    content: "";
-    height: 20px;
-    left: 5px;
-    position: absolute;
-    transition: .4s;
-    width: 20px;
-}
-
-input:checked + .slider {
-    background-color: var(--accent-color);
-}
-
-input:checked + .slider:before {
-    transform: translateX(26px);
-    background-color: var(--primary-text-color);
-}
-
-.slider.round { border-radius: 34px; }
-.slider.round:before { border-radius: 50%; }
-
 /* 8. Errors */
 .error-message {
     color: var(--error-color);

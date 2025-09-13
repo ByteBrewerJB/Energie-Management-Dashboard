@@ -1,62 +1,116 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from decimal import Decimal
 from typing import List, Optional
 
-# Schemas for CarJournalEntry
+# --- Car Journal Entry Schemas ---
+
 class CarJournalEntryBase(BaseModel):
-    total_charged_kwh: float
     car_id: int
-    entity_id: int
+    total_charged_kwh: float
 
 class CarJournalEntryCreate(CarJournalEntryBase):
     pass
 
 class CarJournalEntry(CarJournalEntryBase):
     id: int
+    journal_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
+# --- Monthly Journal Schemas ---
 
-# Schemas for MonthlyJournal
 class MonthlyJournalBase(BaseModel):
     year: int
     month: int
-    grid_consumption_low_kwh: float = 0.0
-    grid_consumption_high_kwh: float = 0.0
-    grid_feed_in_low_kwh: float = 0.0
-    grid_feed_in_high_kwh: float = 0.0
-    consumption_price_low_eur_kwh: float = 0.0
-    consumption_price_high_eur_kwh: float = 0.0
-    feed_in_tariff_low_eur_kwh: float = 0.0
-    feed_in_tariff_high_eur_kwh: float = 0.0
-    solar_production_kwh: float = 0.0
-    battery_charge_kwh: float = 0.0
-    battery_discharge_kwh: float = 0.0
-    monthly_prepayment_eur: float = 0.0
-    car_journal_entries: List[CarJournalEntryCreate] = []
+    grid_consumption_low_kwh: Optional[float] = None
+    grid_consumption_high_kwh: Optional[float] = None
+    grid_feed_in_low_kwh: Optional[float] = None
+    grid_feed_in_high_kwh: Optional[float] = None
+    consumption_price_low_eur_kwh: Optional[Decimal] = None
+    consumption_price_high_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_low_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_high_eur_kwh: Optional[Decimal] = None
+    solar_production_kwh: Optional[float] = None
+    battery_charge_kwh: Optional[float] = None
+    battery_discharge_kwh: Optional[float] = None
+    monthly_prepayment_eur: Optional[Decimal] = None
 
 class MonthlyJournalCreate(MonthlyJournalBase):
-    pass
+    car_entries: List[CarJournalEntryCreate] = []
 
-class MonthlyJournalUpdate(MonthlyJournalBase):
-    pass
 
-# This schema will be used for the API response, including calculated fields
+class MonthlyJournalUpdate(BaseModel):
+    grid_consumption_low_kwh: Optional[float] = None
+    grid_consumption_high_kwh: Optional[float] = None
+    grid_feed_in_low_kwh: Optional[float] = None
+    grid_feed_in_high_kwh: Optional[float] = None
+    consumption_price_low_eur_kwh: Optional[Decimal] = None
+    consumption_price_high_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_low_eur_kwh: Optional[Decimal] = None
+    feed_in_tariff_high_eur_kwh: Optional[Decimal] = None
+    solar_production_kwh: Optional[float] = None
+    battery_charge_kwh: Optional[float] = None
+    battery_discharge_kwh: Optional[float] = None
+    monthly_prepayment_eur: Optional[Decimal] = None
+
+
 class MonthlyJournal(MonthlyJournalBase):
     id: int
-    car_journal_entries: List[CarJournalEntry] = []
+    car_entries: List[CarJournalEntry] = []
 
-    # Calculated Financials
-    total_consumption_cost_excl_vat: float
-    total_consumption_cost_incl_vat: float
-    total_feed_in_revenue: float
-    total_car_reimbursement_eur: float
-    net_balance: float # "Naar eigen rekening"
+    model_config = ConfigDict(from_attributes=True)
 
-    # Calculated Energy Flows
-    self_consumption_kwh: float
-    self_sufficiency_pct: float
-    total_consumption_kwh: float
+# --- Financial Statement Schemas ---
 
-    class Config:
-        from_attributes = True
+class MonthlyStatement(BaseModel):
+    """
+    Schema for returning the calculated financial results of a journal entry.
+    """
+    total_consumption_cost_eur: Decimal
+    total_feed_in_revenue_eur: Decimal
+    net_energy_cost_eur: Decimal
+    total_car_reimbursement_eur: Decimal
+    final_settlement_eur: Decimal
+
+# --- Combined Schema for API Response ---
+
+class JournalWithStatement(BaseModel):
+    """
+    The complete response for a monthly journal, including the raw data
+    and the calculated financial statement.
+    """
+    journal_data: MonthlyJournal
+    financial_statement: MonthlyStatement
+
+
+# --- Frontend-specific Schemas ---
+
+class EnergyFlow(BaseModel):
+    """
+    Schema for the calculated energy flow metrics required by the frontend.
+    """
+    self_consumption_kwh: Decimal
+    total_household_consumption_kwh: Decimal
+    home_consumption_kwh: Decimal
+    self_sufficiency_ratio: Decimal
+    total_grid_feed_in_kwh: Decimal
+    # The frontend expects import_total_kwh, so we need to calculate it.
+    # This can be derived from the journal data.
+    import_total_kwh: Decimal
+
+
+class Financials(BaseModel):
+    """
+    Schema for the calculated financial metrics required by the frontend.
+    This is a subset of the full MonthlyStatement.
+    """
+    net_costs: Decimal
+
+
+class FrontendChartData(BaseModel):
+    """
+    The specific nested structure expected by the dashboard frontend.
+    """
+    metric: MonthlyJournal
+    financials: Financials
+    energy_flow: EnergyFlow

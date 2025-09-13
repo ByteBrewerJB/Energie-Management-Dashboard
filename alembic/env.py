@@ -1,70 +1,34 @@
-import os
-import sys
-from pathlib import Path
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+from dotenv import load_dotenv
 
-# Ensure the project root and the package dir are importable
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-APP_DIR = PROJECT_ROOT / "app"
-for p in (str(PROJECT_ROOT), str(APP_DIR)):
-    if p not in sys.path:
-        sys.path.insert(0, p)
-
-try:
-    # Prefer fully qualified import when available
-    from app.db.session import Base
-    # Import all models so that Base has them registered for autogenerate
-    from app.models import (
-        tariff,
-        user,
-        car,
-        entity,
-        journal,
-        battery,
-        solar_panel,
-    )
-except ModuleNotFoundError:
-    # Fallback when a conflicting third-party 'app' package is installed
-    from db.session import Base
-    from models import (
-        tariff,
-        user,
-        car,
-        entity,
-        journal,
-        battery,
-        solar_panel,
-    )
-
+# Load .env file
+load_dotenv()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-
-# Set the database URL from an environment variable
-# This makes the configuration more flexible and secure
-config.set_main_option("sqlalchemy.url", os.environ.get("DATABASE_URL"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+import os
+from app.models.models import Base
+
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -78,7 +42,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = os.getenv("DATABASE_URL", "sqlite:///./joulejournal.db")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -97,10 +61,25 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    # Get the database URL from the environment variable
+    db_url = os.getenv("DATABASE_URL", "sqlite:///./joulejournal.db")
+
+    # For SQLite, we need to add a special connect_args argument
+    connect_args = {}
+    if db_url.startswith("sqlite"):
+        connect_args = {"check_same_thread": False}
+
+    # Create a configuration dictionary for engine_from_config
+    # and set the URL programmatically
+    # This ensures that the URL from .env is used
+    connectable_config = config.get_section(config.config_ini_section, {})
+    connectable_config['sqlalchemy.url'] = db_url
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        connectable_config,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     with connectable.connect() as connection:

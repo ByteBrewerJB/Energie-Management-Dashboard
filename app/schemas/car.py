@@ -1,19 +1,33 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from decimal import Decimal
 from typing import Optional
 
+# Shared properties
 class CarBase(BaseModel):
-    name: str
-    reimbursement_rate_eur_per_kwh: float
+    name: Optional[str] = None
+    reimbursement_rate_eur_per_kwh: Optional[Decimal] = None
 
+
+# Properties to receive on item creation
 class CarCreate(CarBase):
+    name: str
+    reimbursement_rate_eur_per_kwh: Decimal
+
+
+# Properties to receive on item update
+class CarUpdate(CarBase):
     pass
 
-class CarUpdate(BaseModel):
-    name: Optional[str] = None
-    reimbursement_rate_eur_per_kwh: Optional[float] = None
 
-class Car(CarBase):
+# Properties shared by models stored in DB
+class CarInDBBase(CarBase):
     id: int
+    name: str
+    reimbursement_rate_eur_per_kwh: Decimal
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Properties to return to client
+class Car(CarInDBBase):
+    pass

@@ -1,83 +1,57 @@
-import logging
-import sys
-from logging.config import dictConfig
+import logging.config
+import os
+from app.core.config import settings
+from pythonjsonlogger import jsonlogger
 
-import uvicorn
-from uvicorn.logging import DefaultFormatter
-
-LOG_LEVEL = logging.DEBUG
-LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-
-class HealthCheckFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        # Exclude health check endpoint from logs
-        return "GET /health" not in record.getMessage()
-
-
-def setup_logging(log_level: int = LOG_LEVEL) -> None:
-    """
-    Set up logging for the application.
-    """
-    logging_config = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "filters": {
-            "health_check_filter": {
-                "()": HealthCheckFilter,
-            },
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "app.core.logging_config.CustomJsonFormatter",
         },
-        "formatters": {
-            "default": {
-                "()": DefaultFormatter,
-                "fmt": "%(levelprefix)s %(message)s",
-                "use_colors": True,
-            },
-            "json": {
-                "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "format": "%(asctime)s %(name)s %(process)s %(levelname)s %(message)s",
-            },
+    },
+    "handlers": {
+        "default": {
+            "level": settings.LOG_LEVEL,
+            "formatter": "json",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
         },
-        "handlers": {
-            "default": {
-                "formatter": "default",
-                "class": "logging.StreamHandler",
-                "stream": "ext://sys.stderr",
-                "filters": ["health_check_filter"],
-            },
-            "json": {
-                "formatter": "json",
-                "class": "logging.StreamHandler",
-                "stream": "ext://sys.stdout",
-                "filters": ["health_check_filter"],
-            },
+    },
+    "loggers": {
+        "": {  # root logger
+            "level": settings.LOG_LEVEL,
+            "handlers": ["default"],
+            "propagate": False,
         },
-        "loggers": {
-            "root": {
-                "handlers": ["default"],
-                "level": log_level,
-            },
-            "uvicorn.error": {
-                "level": log_level,
-            },
-            "uvicorn.access": {
-                "handlers": ["default"],
-                "level": log_level,
-                "propagate": False,
-            },
+        "uvicorn.error": {
+            "level": settings.LOG_LEVEL,
+            "handlers": ["default"],
+            "propagate": False,
         },
-    }
+        "uvicorn.access": {
+            "level": settings.LOG_LEVEL,
+            "handlers": ["default"],
+            "propagate": False,
+        },
+        "joulejournal": {
+            "level": settings.LOG_LEVEL,
+            "handlers": ["default"],
+            "propagate": False,
+        },
+    },
+}
 
-    # Use JSON formatter if not in development
-    if not __debug__:
-        logging_config["loggers"]["root"]["handlers"] = ["json"]
-        logging_config["loggers"]["uvicorn.access"]["handlers"] = ["json"]
+def setup_logging():
+    logging.config.dictConfig(LOGGING_CONFIG)
 
-    dictConfig(logging_config)
-
-
-def get_logger(name: str) -> logging.Logger:
-    """
-    Get a logger instance.
-    """
-    return logging.getLogger(name)
+class CustomJsonFormatter(jsonlogger.JsonFormatter):
+    def add_fields(self, log_record, record, message_dict):
+        super(CustomJsonFormatter, self).add_fields(log_record, record, message_dict)
+        if not log_record.get('timestamp'):
+            log_record['timestamp'] = record.created
+        if log_record.get('level'):
+            log_record['level'] = log_record['level'].upper()
+        else:
+            log_record['level'] = record.levelname

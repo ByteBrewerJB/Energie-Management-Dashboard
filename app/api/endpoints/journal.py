@@ -1,50 +1,88 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-
-from app import crud
+from app.db.session import get_db
 from app.api import deps
-from app.schemas.journal import MonthlyJournal, MonthlyJournalCreate
-from app.services import journal_service
-from app.models.user import User
+from app.schemas import journal as journal_schema
+from app.crud import crud_journal
 
 router = APIRouter()
 
+from decimal import Decimal
+from app.services import financial_calculations, energy_calculations
 
-@router.put("/{year}/{month}", response_model=MonthlyJournal)
-def create_or_update_journal_entry(
+@router.get("/{year}", response_model=List[journal_schema.FrontendChartData])
+def read_journals_for_year(
     year: int,
-    month: int,
-    journal_in: MonthlyJournalCreate,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    db: Session = Depends(get_db),
+    current_user: str = Depends(deps.get_current_user)
 ):
     """
-    Create or update a monthly journal entry.
+    Retrieve all monthly journal entries for a specific year, run calculations,
+    and return the data in the format expected by the frontend.
     """
-    # Ensure the path year/month match the payload
-    if journal_in.year != year or journal_in.month != month:
-        raise HTTPException(
-            status_code=400,
-            detail="The year and month in the URL path do not match the payload.",
+    db_journals = crud_journal.get_journals_by_year(db, year=year)
+
+    response_data = []
+    for journal in db_journals:
+        # 1. Perform financial calculations
+        statement = financial_calculations.calculate_monthly_statement(journal)
+
+        # 2. Perform energy flow calculations
+        energy_flow_dict = energy_calculations.calculate_energy_flow(journal)
+
+        # 3. Assemble the data into the structure the frontend expects
+
+        # The frontend expects `import_total_kwh` which is not in the energy_flow dict.
+        # We calculate it here from the raw journal data.
+        import_total_kwh = (journal.grid_consumption_low_kwh or 0) + \
+                            (journal.grid_consumption_high_kwh or 0)
+
+        # The frontend also expects `export_total_kwh` on the metric object itself,
+        # but the calculation service puts it in `total_grid_feed_in_kwh`. Let's align that.
+        # We can add it to the journal object before creating the Pydantic model.
+        journal.export_total_kwh = energy_flow_dict.get("total_grid_feed_in_kwh", 0)
+
+
+        energy_flow = journal_schema.EnergyFlow(
+            self_consumption_kwh=energy_flow_dict.get("self_consumption_kwh", 0),
+            total_household_consumption_kwh=energy_flow_dict.get("total_household_consumption_kwh", 0),
+            home_consumption_kwh=energy_flow_dict.get("home_consumption_kwh", 0),
+            self_sufficiency_ratio=energy_flow_dict.get("self_sufficiency_ratio", 0),
+            total_grid_feed_in_kwh=energy_flow_dict.get("total_grid_feed_in_kwh", 0),
+            import_total_kwh=import_total_kwh
         )
 
-    db_journal = crud.journal.create_or_update_journal(db=db, journal_in=journal_in)
-    return journal_service.process_journal_entry(db, db_journal)
+        financials = journal_schema.Financials(
+            net_costs=statement.net_energy_cost_eur
+        )
 
+        # The frontend expects the raw journal data under the 'metric' key
+        metric = journal_schema.MonthlyJournal.model_validate(journal)
 
-@router.get("/{year}", response_model=List[MonthlyJournal])
-def read_journal_for_year(
+        chart_data = journal_schema.FrontendChartData(
+            metric=metric,
+            financials=financials,
+            energy_flow=energy_flow
+        )
+        response_data.append(chart_data)
+
+    return response_data
+
+@router.put("/{year}/{month}", response_model=journal_schema.MonthlyJournal)
+def update_monthly_journal(
     year: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
+    month: int,
+    *,
+    db: Session = Depends(get_db),
+    journal_in: journal_schema.MonthlyJournalUpdate,
+    current_user: str = Depends(deps.get_current_user)
 ):
     """
-    Retrieve all processed monthly journal entries for a specific year.
+    Update a monthly journal entry.
     """
-    db_journals = crud.journal.get_journals_by_year(db, year=year)
-    if not db_journals:
-        raise HTTPException(status_code=404, detail=f"No journal entries found for year {year}")
-
-    return [journal_service.process_journal_entry(db, j) for j in db_journals]
+    journal = crud_journal.update_journal(db=db, year=year, month=month, obj_in=journal_in)
+    if not journal:
+        raise HTTPException(status_code=404, detail="Journal not found for this period.")
+    return journal

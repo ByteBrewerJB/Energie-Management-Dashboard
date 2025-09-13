@@ -1,45 +1,57 @@
-from typing import Generator
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt
-from pydantic import ValidationError
-from sqlalchemy.orm import Session
+from jose import JWTError, jwt
 
-from app import crud
-from app.models.user import User
+from app.core.config import settings
 from app.schemas.token import TokenData
-from app.core import security
-from app.core.config import SECRET_KEY, ALGORITHM
-from app.db.session import SessionLocal
+from app.db.session import get_db
 
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl="/api/auth/login"
-)
+# This will be the URL that clients use to get the token (the login endpoint)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
+def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
+    """
+    Decodes the JWT token to get the current user.
 
-def get_db() -> Generator:
-    try:
-        db = SessionLocal()
-        yield db
-    finally:
-        db.close()
+    This function is used as a dependency to protect routes, ensuring that
+    the user is authenticated and is the admin user.
 
+    Args:
+        token: The OAuth2 bearer token.
 
-def get_current_user(
-    db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)
-) -> User:
+    Returns:
+        The username of the current user if the token is valid and belongs
+        to the admin.
+
+    Raises:
+        HTTPException: 401 Unauthorized if the token is invalid or credentials
+                       cannot be validated.
+        HTTPException: 403 Forbidden if the user is not the designated admin
+                       user.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
         payload = jwt.decode(
-            token, SECRET_KEY, algorithms=[ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        token_data = TokenData(**payload)
-    except (jwt.JWTError, ValidationError):
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        # In a real app with users, you would load the user from the DB here.
+        # For this app, the username is sufficient.
+        token_data = TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+
+    # Check if the user from the token is the admin user
+    if token_data.username != settings.ADMIN_USER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
+            detail="The user does not have permissions to perform this action"
         )
-    user = crud.user.get_user_by_username(db, username=token_data.sub)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+
+    return token_data.username

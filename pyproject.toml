@@ -17,7 +17,7 @@ passlib = {extras = ["bcrypt"], version = "*"}
 alembic = "*"
 python-multipart = "*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 httpx = "*"
 pytest-env = "*"

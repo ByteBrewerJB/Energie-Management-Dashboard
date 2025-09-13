@@ -8,7 +8,7 @@ from sqlalchemy import pool
 from alembic import context
 
 # Make sure the app directory is in the path, so we can import from app
-sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.db.session import Base
 # Import all models here so that Base has them registered for autogenerate

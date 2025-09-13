@@ -19,7 +19,7 @@ COPY pyproject.toml poetry.lock* /app/
 # Install project dependencies
 # Using --no-lock to resolve dependencies from pyproject.toml, which is safer across different environments
 # Using --no-root because we only need the dependencies, not the project itself installed.
-RUN poetry install --no-root --no-dev --no-lock
+RUN poetry install --no-root --without dev
 
 # Copy the rest of the application code into the container
 COPY ./app /app/app

@@ -19,7 +19,6 @@ services:
     volumes:
       - ./app:/app/app
       - ./alembic:/app/alembic
-      - ./alembic.ini:/app/alembic.ini
     ports:
       - "5201:8000"
     environment:

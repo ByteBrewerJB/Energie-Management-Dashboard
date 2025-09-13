@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..'
 
 from app.db.session import Base
 # Import all models here so that Base has them registered for autogenerate
-from app.models import tariff, user, car, entity, journal
+from app.models import tariff, user, car, entity, journal, battery, solar_panel
 
 
 # this is the Alembic Config object, which provides

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.db.session import SessionLocal
-from app.api.endpoints import auth, tariffs, cars, journal
+from app.api.endpoints import auth, tariffs, cars, journal, batteries, solar_panels, roi
 from app import crud
 from app.schemas.user import UserCreate
 
@@ -24,6 +24,9 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(tariffs.router, prefix="/api/tariffs", tags=["tariffs"])
 app.include_router(cars.router, prefix="/api/cars", tags=["cars"])
 app.include_router(journal.router, prefix="/api/journal", tags=["journal"])
+app.include_router(batteries.router, prefix="/api/batteries", tags=["batteries"])
+app.include_router(solar_panels.router, prefix="/api/solar_panels", tags=["solar_panels"])
+app.include_router(roi.router, prefix="/api/roi", tags=["roi"])
 
 @app.get("/")
 def read_root():

@@ -13,6 +13,10 @@ def get_journals_by_year(db: Session, year: int) -> List[MonthlyJournal]:
     return db.query(MonthlyJournal).filter(MonthlyJournal.year == year).order_by(MonthlyJournal.month).all()
 
 
+def get_all_journals(db: Session) -> List[MonthlyJournal]:
+    return db.query(MonthlyJournal).order_by(MonthlyJournal.year, MonthlyJournal.month).all()
+
+
 def create_or_update_journal(db: Session, journal_in: MonthlyJournalCreate) -> MonthlyJournal:
     db_journal = get_journal(db, year=journal_in.year, month=journal_in.month)
 

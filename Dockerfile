@@ -4,6 +4,9 @@ FROM python:3.9-bookworm
 # Set the working directory in the container
 WORKDIR /app
 
+# Ensure our source tree is importable without relying on Compose
+ENV PYTHONPATH=/app
+
 # Install system dependencies required for building some Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \

@@ -22,23 +22,18 @@ services:
       dockerfile: Dockerfile
       args:
         - PORT=${PORT:-5201}
-    # Avoid bind mounts in stack deployments; use baked image contents
     ports:
       - "${PORT:-5201}:${PORT:-5201}"
     environment:
       - PORT=${PORT:-5201}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-joule}:${POSTGRES_PASSWORD:-joule}@db:5432/${POSTGRES_DB:-joulejournal}
       - PYTHONPATH=/app
-    command: >
-      bash -lc "
-        set -euxo pipefail
-        echo '--- Waiting for database (via healthcheck) ---'
-        echo '--- Running database migrations ---'
-        alembic upgrade head
-        echo '--- Database migrations complete ---'
-        echo '--- Starting web server ---'
-        uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-5201}
-      "
+    command: /app/scripts/start.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-5201}/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       db:
         condition: service_healthy

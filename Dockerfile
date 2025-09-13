@@ -29,6 +29,10 @@ RUN poetry install --no-root --without dev --no-interaction --no-ansi
 COPY ./app /app/app
 COPY ./alembic /app/alembic
 COPY ./alembic.ini /app/alembic.ini
+COPY ./scripts /app/scripts
+
+# Make the startup script executable
+RUN chmod +x /app/scripts/start.sh
 
 # Default command (may be overridden by compose)
-CMD ["bash", "-lc", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["/app/scripts/start.sh"]

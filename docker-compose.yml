@@ -2,30 +2,47 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:13
+    image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_USER=joule
-      - POSTGRES_PASSWORD=joule
-      - POSTGRES_DB=joulejournal
-    ports:
-      - "5432:5432"
+      - POSTGRES_USER=${POSTGRES_USER:-joule}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-joule}
+      - POSTGRES_DB=${POSTGRES_DB:-joulejournal}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-joule} -d ${POSTGRES_DB:-joulejournal}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - ./app:/app/app
-      - ./alembic:/app/alembic
+      args:
+        - PORT=${PORT:-5201}
+    # Avoid bind mounts in stack deployments; use baked image contents
     ports:
-      - "5201:8000"
+      - "${PORT:-5201}:${PORT:-5201}"
     environment:
-      - DATABASE_URL=postgresql://joule:joule@db/joulejournal
+      - PORT=${PORT:-5201}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-joule}:${POSTGRES_PASSWORD:-joule}@db:5432/${POSTGRES_DB:-joulejournal}
       - PYTHONPATH=/app
+    command: >
+      bash -lc "
+        set -euxo pipefail
+        echo '--- Waiting for database (via healthcheck) ---'
+        echo '--- Running database migrations ---'
+        alembic upgrade head
+        echo '--- Database migrations complete ---'
+        echo '--- Starting web server ---'
+        uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-5201}
+      "
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: always
 
 volumes:
   postgres_data:

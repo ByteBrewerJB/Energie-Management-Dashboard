@@ -1,56 +1,82 @@
-from fastapi import FastAPI
-from app.core.logging_config import setup_logging, get_logger
-from app.db.session import SessionLocal
-from app.api.endpoints import auth, tariffs, cars, journal, batteries, solar_panels, roi
-from app import crud
-from app.schemas.user import UserCreate
+import logging
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.logging_config import setup_logging
+from app.core.config import settings
 
-# Set up logging
 setup_logging()
-logger = get_logger(__name__)
+
+from app.api.endpoints import (
+    roi,
+    auth,
+    investments,
+    batteries,
+    cars,
+    journal,
+    tariffs,
+    debug
+)
 
 app = FastAPI(
     title="JouleJournal",
-    description="A web application for monitoring, analyzing, and reporting energy consumption.",
-    version="0.1.0"
+    description="Een webapplicatie voor het monitoren, analyseren en rapporteren van energieverbruik.",
+    version="1.0.0"
 )
 
-# Create initial user on startup
-@app.on_event("startup")
-def startup_event():
-    logger.info("Starting up and creating initial user if needed.")
-    db = SessionLocal()
-    user = crud.user.get_user_by_username(db, username="admin")
-    if not user:
-        logger.info("Creating admin user.")
-        user_in = UserCreate(username="admin", password="admin")
-        crud.user.create_user(db=db, user=user_in)
-    db.close()
+# Set up CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(tariffs.router, prefix="/api/tariffs", tags=["tariffs"])
-app.include_router(cars.router, prefix="/api/cars", tags=["cars"])
-app.include_router(journal.router, prefix="/api/journal", tags=["journal"])
-app.include_router(batteries.router, prefix="/api/batteries", tags=["batteries"])
-app.include_router(solar_panels.router, prefix="/api/solar_panels", tags=["solar_panels"])
-app.include_router(roi.router, prefix="/api/roi", tags=["roi"])
+# Middleware to log requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger = logging.getLogger("joulejournal.request")
+    logger.info(f"Incoming request: {request.method} {request.url.path}", extra={
+        "method": request.method,
+        "path": request.url.path,
+        "client_host": request.client.host,
+        "client_port": request.client.port,
+    })
+    response = await call_next(request)
+    return response
 
-@app.get("/")
-def read_root():
-    """A simple endpoint to confirm the API is running."""
-    return {"status": "ok"}
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Setup templates
+templates = Jinja2Templates(directory="templates")
+
+# Include the API routers
+app.include_router(journal.router, prefix="/api/metrics", tags=["Metrics"])
+app.include_router(roi.router, prefix="/api", tags=["ROI"])
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(investments.router, prefix="/api", tags=["Investments"])
+app.include_router(tariffs.router, prefix="/api", tags=["Tariffs"])
+app.include_router(batteries.router, prefix="/api", tags=["Batteries"])
+app.include_router(cars.router, prefix="/api", tags=["Cars"])
+app.include_router(debug.router, prefix="/api", tags=["Debug"])
 
 
-@app.get("/health")
-def health_check():
-    """
-    Health check endpoint to verify that the application is running and can connect to the database.
-    """
-    try:
-        db = SessionLocal()
-        db.execute("SELECT 1")
-        db.close()
-        return {"status": "ok"}
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return {"status": "error", "detail": str(e)}
+@app.get("/", tags=["Root"])
+def serve_dashboard(request: Request):
+    """Serves the main dashboard page."""
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/login", tags=["Authentication"])
+def serve_login_page(request: Request):
+    """Serves the login page."""
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.get("/admin", tags=["Admin"])
+def serve_admin_page(request: Request):
+    """Serves the admin page."""
+    return templates.TemplateResponse("admin.html", {"request": request})

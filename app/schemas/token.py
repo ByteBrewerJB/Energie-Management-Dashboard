@@ -3,9 +3,11 @@ from typing import Optional
 
 
 class Token(BaseModel):
+    """Schema for the access token response."""
     access_token: str
     token_type: str
 
 
 class TokenData(BaseModel):
-    sub: Optional[str] = None
+    """Schema for the data encoded within a JWT."""
+    username: Optional[str] = None

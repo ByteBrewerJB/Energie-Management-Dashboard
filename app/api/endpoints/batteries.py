@@ -1,82 +1,89 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import List, Any
 
-from app import crud
+from app.db.session import get_db
 from app.api import deps
 from app.schemas.battery import Battery, BatteryCreate, BatteryUpdate
-from app.models.user import User
+from app.crud import crud_battery
 
 router = APIRouter()
 
-
-@router.post("/", response_model=Battery, status_code=status.HTTP_201_CREATED)
-def create_battery(
-    battery_in: BatteryCreate,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
-):
-    """
-    Create a new battery.
-    """
-    return crud.battery.create_battery(db=db, battery=battery_in)
-
-
-@router.get("/", response_model=List[Battery])
+@router.get("/batteries", response_model=List[Battery])
 def read_batteries(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(deps.get_current_user),
-):
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
     """
-    Retrieve batteries.
+    Retrieve all battery installations.
     """
-    return crud.battery.get_batteries(db, skip=skip, limit=limit)
+    batteries = crud_battery.get_multi(db, skip=skip, limit=limit)
+    return batteries
 
 
-@router.get("/{battery_id}", response_model=Battery)
+@router.post("/batteries", response_model=Battery, status_code=status.HTTP_201_CREATED)
+def create_battery(
+    *,
+    db: Session = Depends(get_db),
+    battery_in: BatteryCreate,
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Create a new battery installation.
+    """
+    battery = crud_battery.create(db=db, obj_in=battery_in)
+    return battery
+
+
+@router.get("/batteries/{battery_id}", response_model=Battery)
 def read_battery(
+    *,
+    db: Session = Depends(get_db),
     battery_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
-):
+) -> Any:
     """
-    Get a specific battery by ID.
+    Get a specific battery installation by its ID.
     """
-    db_battery = crud.battery.get_battery(db, battery_id=battery_id)
-    if db_battery is None:
-        raise HTTPException(status_code=404, detail="Battery not found")
-    return db_battery
+    battery = crud_battery.get(db, battery_id=battery_id)
+    if not battery:
+        raise HTTPException(status_code=404, detail="Battery installation not found")
+    return battery
 
 
-@router.put("/{battery_id}", response_model=Battery)
+@router.put("/batteries/{battery_id}", response_model=Battery)
 def update_battery(
+    *,
+    db: Session = Depends(get_db),
     battery_id: int,
     battery_in: BatteryUpdate,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
-):
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
     """
-    Update a battery.
+    Update an existing battery installation.
     """
-    db_battery = crud.battery.get_battery(db, battery_id=battery_id)
-    if not db_battery:
-        raise HTTPException(status_code=404, detail="Battery not found")
-    return crud.battery.update_battery(db=db, battery_id=battery_id, battery_in=battery_in)
+    battery = crud_battery.get(db, battery_id=battery_id)
+    if not battery:
+        raise HTTPException(status_code=404, detail="Battery installation not found")
+
+    battery = crud_battery.update(db=db, db_obj=battery, obj_in=battery_in)
+    return battery
 
 
-@router.delete("/{battery_id}", response_model=Battery)
+@router.delete("/batteries/{battery_id}", response_model=Battery)
 def delete_battery(
+    *,
+    db: Session = Depends(get_db),
     battery_id: int,
-    db: Session = Depends(deps.get_db),
-    current_user: User = Depends(deps.get_current_user),
-):
+    current_user: str = Depends(deps.get_current_user),
+) -> Any:
     """
-    Delete a battery.
+    Delete a battery installation.
     """
-    db_battery = crud.battery.get_battery(db, battery_id=battery_id)
-    if not db_battery:
-        raise HTTPException(status_code=404, detail="Battery not found")
-    return crud.battery.delete_battery(db=db, battery_id=battery_id)
+    battery = crud_battery.get(db, battery_id=battery_id)
+    if not battery:
+        raise HTTPException(status_code=404, detail="Battery installation not found")
+
+    battery = crud_battery.remove(db=db, battery_id=battery_id)
+    return battery

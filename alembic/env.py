@@ -8,14 +8,38 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# Ensure the project root is on sys.path so "app" is importable
-PROJECT_ROOT = str(Path(__file__).resolve().parents[1])
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# Ensure the project root and the package dir are importable
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+APP_DIR = PROJECT_ROOT / "app"
+for p in (str(PROJECT_ROOT), str(APP_DIR)):
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
-from app.db.session import Base
-# Import all models here so that Base has them registered for autogenerate
-from app.models import tariff, user, car, entity, journal, battery, solar_panel
+try:
+    # Prefer fully qualified import when available
+    from app.db.session import Base
+    # Import all models so that Base has them registered for autogenerate
+    from app.models import (
+        tariff,
+        user,
+        car,
+        entity,
+        journal,
+        battery,
+        solar_panel,
+    )
+except ModuleNotFoundError:
+    # Fallback when a conflicting third-party 'app' package is installed
+    from db.session import Base
+    from models import (
+        tariff,
+        user,
+        car,
+        entity,
+        journal,
+        battery,
+        solar_panel,
+    )
 
 
 # this is the Alembic Config object, which provides

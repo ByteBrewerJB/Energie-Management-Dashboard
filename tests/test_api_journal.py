@@ -90,7 +90,7 @@ def test_get_journal_for_month(db_session):
     assert data["metric"]["year"] == 2026
     assert data["metric"]["month"] == 6
     assert data["metric"]["solar_production_kwh"] == 123.4
-    assert "financials" in data
+    assert "financial_statement" in data
     assert "energy_flow" in data
 
 def test_get_nonexistent_journal_for_month_fails(db_session):

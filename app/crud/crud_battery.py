@@ -27,7 +27,7 @@ def create(db: Session, *, obj_in: BatteryCreate) -> models.Battery:
         name=obj_in.name,
         purchase_date=obj_in.purchase_date,
         purchase_cost_eur=obj_in.purchase_cost_eur,
-        brand=obj_in.brand,
+        brand=getattr(obj_in, 'brand', None),
         capacity_kwh=obj_in.capacity_kwh
     )
     db.add(db_obj)

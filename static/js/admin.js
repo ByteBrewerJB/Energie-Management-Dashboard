@@ -169,6 +169,14 @@ function loadGenericTab(modelNamePlural) {
             const table = createGenericTable(data, Object.keys(config.fields), modelName);
             container.innerHTML = '';
             container.appendChild(table);
+
+            // Special handling for single-installation models like solar panels
+            if (modelName === 'solar_panel') {
+                const addButton = document.querySelector('.add-new-btn[data-model="solar_panel"]');
+                if (addButton) {
+                    addButton.disabled = data.length > 0;
+                }
+            }
         })
         .catch(error => {
             console.error(`Failed to load ${modelNamePlural}:`, error);
@@ -357,10 +365,25 @@ async function handleFormSubmit(event) {
 
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
+    const config = MODEL_CONFIG[modelName].fields;
 
-    for (const key in data) {
-        if (data[key] === '') {
-            data[key] = null;
+    // Process data: parse numbers, set empty optional fields to null.
+    for (const key in config) {
+        if (data.hasOwnProperty(key)) {
+            const fieldConfig = config[key];
+            const value = data[key];
+
+            if (fieldConfig.type === 'number') {
+                if (value === '' && !fieldConfig.required) {
+                    data[key] = null;
+                } else if (value !== '') {
+                    data[key] = parseFloat(value);
+                }
+            } else {
+                if (value === '' && !fieldConfig.required) {
+                    data[key] = null;
+                }
+            }
         }
     }
 

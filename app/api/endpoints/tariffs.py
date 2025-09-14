@@ -9,7 +9,7 @@ from app.crud import crud_tariff
 
 router = APIRouter()
 
-@router.get("/tariffs", response_model=List[Tariff])
+@router.get("/", response_model=List[Tariff])
 def read_tariffs(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -23,7 +23,7 @@ def read_tariffs(
     return tariffs
 
 
-@router.post("/tariffs", response_model=Tariff, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=Tariff, status_code=status.HTTP_201_CREATED)
 def create_tariff(
     *,
     db: Session = Depends(get_db),
@@ -37,11 +37,12 @@ def create_tariff(
     return tariff
 
 
-@router.get("/tariffs/{tariff_id}", response_model=Tariff)
+@router.get("/{tariff_id}", response_model=Tariff)
 def read_tariff(
     *,
     db: Session = Depends(get_db),
     tariff_id: int,
+    current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
     Get a specific tariff by its ID.
@@ -52,7 +53,7 @@ def read_tariff(
     return tariff
 
 
-@router.put("/tariffs/{tariff_id}", response_model=Tariff)
+@router.put("/{tariff_id}", response_model=Tariff)
 def update_tariff(
     *,
     db: Session = Depends(get_db),
@@ -71,7 +72,7 @@ def update_tariff(
     return tariff
 
 
-@router.delete("/tariffs/{tariff_id}", response_model=Tariff)
+@router.delete("/{tariff_id}", response_model=Tariff)
 def delete_tariff(
     *,
     db: Session = Depends(get_db),

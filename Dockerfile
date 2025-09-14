@@ -25,8 +25,7 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 # Install the Python dependencies using Poetry
 # --no-interaction: Do not ask any interactive question
 # --no-root: Do not install the root package (the project itself)
-# --without dev: Do not install dev dependencies (Poetry 2.x)
-RUN poetry install --no-interaction --no-root --without dev
+RUN poetry install --no-interaction --no-root
 
 # Copy the entire application source code into the container
 COPY . /app

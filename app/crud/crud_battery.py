@@ -2,8 +2,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.models import models
-from app.schemas.investment import BatteryInvestmentCreate
-from app.schemas.battery import BatteryUpdate
+from app.schemas.battery import BatteryCreate, BatteryUpdate
 
 
 def get(db: Session, battery_id: int) -> Optional[models.Battery]:
@@ -20,7 +19,7 @@ def get_multi(db: Session, skip: int = 0, limit: int = 100) -> List[models.Batte
     return db.query(models.Battery).offset(skip).limit(limit).all()
 
 
-def create(db: Session, *, obj_in: BatteryInvestmentCreate) -> models.Battery:
+def create(db: Session, *, obj_in: BatteryCreate) -> models.Battery:
     """
     Creates a new battery installation record.
     """
@@ -28,9 +27,8 @@ def create(db: Session, *, obj_in: BatteryInvestmentCreate) -> models.Battery:
         name=obj_in.name,
         purchase_date=obj_in.purchase_date,
         purchase_cost_eur=obj_in.purchase_cost_eur,
-        # Brand and capacity are not part of the simplified form
-        brand=getattr(obj_in, 'brand', None),
-        capacity_kwh=getattr(obj_in, 'capacity_kwh', 0.0)
+        brand=obj_in.brand,
+        capacity_kwh=obj_in.capacity_kwh
     )
     db.add(db_obj)
     db.commit()
@@ -44,7 +42,7 @@ def update(
     """
     Updates an existing battery installation record.
     """
-    update_data = obj_in.dict(exclude_unset=True)
+    update_data = obj_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_obj, field, value)
 

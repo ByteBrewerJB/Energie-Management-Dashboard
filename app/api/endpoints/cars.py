@@ -6,10 +6,11 @@ from app.db.session import get_db
 from app.api import deps
 from app.schemas.car import Car, CarCreate, CarUpdate
 from app.crud import crud_car
+from app.models import models
 
 router = APIRouter()
 
-@router.get("/cars", response_model=List[Car])
+@router.get("/", response_model=List[Car])
 def read_cars(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -23,7 +24,7 @@ def read_cars(
     return cars
 
 
-@router.post("/cars", response_model=Car, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=Car, status_code=status.HTTP_201_CREATED)
 def create_car(
     *,
     db: Session = Depends(get_db),
@@ -43,7 +44,7 @@ def create_car(
     return car
 
 
-@router.get("/cars/{car_id}", response_model=Car)
+@router.get("/{car_id}", response_model=Car)
 def read_car(
     *,
     db: Session = Depends(get_db),
@@ -59,7 +60,7 @@ def read_car(
     return car
 
 
-@router.put("/cars/{car_id}", response_model=Car)
+@router.put("/{car_id}", response_model=Car)
 def update_car(
     *,
     db: Session = Depends(get_db),
@@ -78,7 +79,7 @@ def update_car(
     return car
 
 
-@router.delete("/cars/{car_id}", response_model=Car)
+@router.delete("/{car_id}", response_model=Car)
 def delete_car(
     *,
     db: Session = Depends(get_db),

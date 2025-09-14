@@ -99,18 +99,10 @@ class EnergyFlow(BaseModel):
     import_total_kwh: Decimal
 
 
-class Financials(BaseModel):
-    """
-    Schema for the calculated financial metrics required by the frontend.
-    This is a subset of the full MonthlyStatement.
-    """
-    net_costs: Decimal
-
-
 class FrontendChartData(BaseModel):
     """
     The specific nested structure expected by the dashboard frontend.
     """
     metric: MonthlyJournal
-    financials: Financials
+    financial_statement: MonthlyStatement
     energy_flow: EnergyFlow

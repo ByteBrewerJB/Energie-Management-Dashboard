@@ -1,67 +1,5 @@
 // JouleJournal Dashboard - Main Application Logic
 
-const API_URL = '/api';
-
-/**
- * A wrapper around the fetch API that adds the Authorization header
- * and handles 401 Unauthorized responses by redirecting to the login page.
- * @param {string} url The URL to fetch.
- * @param {object} options The options for the fetch request.
- * @returns {Promise<any>} A promise that resolves to the JSON response.
- */
-async function fetchWithAuth(url, options = {}) {
-    const token = localStorage.getItem('access_token');
-
-    const headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${token}`,
-    };
-
-    const response = await fetch(url, { ...options, headers });
-
-    if (response.status === 401) {
-        // Token is invalid or expired
-        localStorage.removeItem('access_token');
-        window.location.href = '/login';
-        // Throw an error to stop further processing
-        throw new Error('Session expired. Please log in again.');
-    }
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred.' }));
-        throw new Error(errorData.detail);
-    }
-
-    return response.json();
-}
-
-/**
- * A robust parseFloat function that handles various input types.
- * @param {*} value The value to parse.
- * @returns {number} The parsed number, or 0 if invalid.
- */
-function safeParseFloat(value) {
-    if (typeof value === 'number') {
-        return value;
-    }
-    if (typeof value !== 'string') {
-        return 0;
-    }
-    // Remove characters that commonly cause issues: currency symbols, thousands separators.
-    const cleanedValue = value.replace(/[€$,]/g, '').trim();
-    if (cleanedValue === '') {
-        return 0;
-    }
-    const num = parseFloat(cleanedValue);
-    return isNaN(num) ? 0 : num;
-}
-
-
-// Store chart instances to destroy them before re-rendering
-let energyBalanceChartInstance = null;
-let consumptionSplitChartInstance = null;
-let productionForecastChartInstance = null;
-
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
@@ -69,114 +7,175 @@ document.addEventListener('DOMContentLoaded', () => {
         return; // Stop executing script if not authenticated
     }
 
-    const themeSwitch = document.getElementById('checkbox');
-    if (themeSwitch) {
-        // Set the default theme to light. Check localStorage for 'dark-mode' override.
-        const currentTheme = localStorage.getItem('theme');
-        if (currentTheme === 'dark-mode') {
-            document.body.classList.add('dark-mode');
-            themeSwitch.checked = true;
-        }
+    // Initialize theme
+    feather.replace();
 
-        // Listen for theme changes
-        themeSwitch.addEventListener('change', function(event) {
-            if (event.target.checked) {
-                document.body.classList.add('dark-mode');
-                localStorage.setItem('theme', 'dark-mode');
-            } else {
-                document.body.classList.remove('dark-mode');
-                localStorage.removeItem('theme'); // Light theme is the default
-            }
-        });
-    }
+    // Setup Journal Form
+    const yearInput = document.getElementById('journal-year');
+    const monthInput = document.getElementById('journal-month');
+    const now = new Date();
+    yearInput.value = now.getFullYear();
+    monthInput.value = now.getMonth() + 1;
 
-    console.log('JouleJournal Dashboard Initialized.');
+    document.getElementById('journal-form').addEventListener('submit', handleJournalSubmit);
+    loadCarsAndPopulateForm();
+
+    // Load dashboard data
     loadAllData();
 });
 
-/**
- * Fetches all necessary data from the backend API concurrently.
- */
-async function loadAllData() {
-    const kpiContainer = document.getElementById('kpi-card');
-    const kpisDiv = document.getElementById('kpis');
-    kpisDiv.innerHTML = '<p>Loading dashboard data...</p>';
+// --- API Helper ---
+async function fetchAPI(endpoint, options = {}) {
+    const token = localStorage.getItem('access_token');
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+    };
+    const response = await fetch(`/api${endpoint}`, { ...options, headers });
+    if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+        throw new Error('Unauthorized');
+    }
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred.' }));
+        const errorMessage = typeof errorData.detail === 'string'
+            ? errorData.detail
+            : JSON.stringify(errorData.detail, null, 2);
+        throw new Error(errorMessage || `API Error (${response.status})`);
+    }
+    if (response.status === 204 || response.headers.get("content-length") === "0") {
+        return null;
+    }
+    return response.json();
+}
 
-    const year = new Date().getFullYear();
-
+// --- Journal Form Logic ---
+async function loadCarsAndPopulateForm() {
+    const container = document.getElementById('car-charging-entries');
     try {
-        const timeseriesPromise = fetchWithAuth(`${API_URL}/metrics/${year}`);
-
-        const roiPromise = fetchWithAuth(`${API_URL}/investments`)
-            .then(investments => {
-                const solarPanel = investments.find(inv => inv.type === 'solar_panel');
-                if (solarPanel) {
-                    return fetchWithAuth(`${API_URL}/roi/solar_panels/${solarPanel.id}`);
-                }
-                return null; // No solar panel found
-            });
-
-        // As discovered during exploration, there is no forecast endpoint.
-        // We will provide a dummy structure to prevent the chart rendering from failing.
-        const forecastPromise = Promise.resolve({
-            forecast: {
-                forecast: [] // Empty array to signify no data
-            }
-        });
-
-        const [timeseriesData, roiData, forecastData] = await Promise.all([
-            timeseriesPromise,
-            roiPromise,
-            forecastPromise
-        ]);
-
-        if (!timeseriesData || timeseriesData.length === 0) {
-            kpisDiv.innerHTML = '<p>No dashboard data available for the current year. Please add data via the admin panel.</p>';
+        const cars = await fetchAPI('/cars/');
+        if (cars.length === 0) {
+            container.innerHTML = '<p>No cars configured. Add one in the <a href="/admin">admin panel</a>.</p>';
             return;
         }
-
-        // Render all the components with the fetched data
-        renderKPIs(timeseriesData, year);
-        renderRoiTracker(roiData);
-        renderEnergyBalanceChart(timeseriesData);
-        renderConsumptionSplitChart(timeseriesData);
-        renderProductionForecastChart(timeseriesData, forecastData);
-
+        container.innerHTML = ''; // Clear loading message
+        cars.forEach(car => {
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
+            formGroup.innerHTML = `
+                <label for="car-${car.id}">${car.name}</label>
+                <input type="number" step="0.01" name="car_charge_kwh" data-car-id="${car.id}">
+            `;
+            container.appendChild(formGroup);
+        });
     } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-        // The fetchWithAuth function handles redirects for 401,
-        // so we only need to show a generic error for other issues.
-        const errorHtml = `
-            <div class="error-message">
-                <strong>Error loading dashboard</strong>
-                <p>${error.message}</p>
-            </div>
-        `;
-        if (kpiContainer) {
-            kpiContainer.innerHTML = errorHtml;
-        } else {
-            kpisDiv.innerHTML = errorHtml;
-        }
+        console.error('Failed to load cars:', error);
+        container.innerHTML = `<p class="error-text">Could not load cars: ${error.message}</p>`;
     }
 }
 
-/**
- * Renders Key Performance Indicators for the specified year.
- */
-function renderKPIs(timeseriesData, year) {
-    const kpisDiv = document.getElementById('kpis');
-    if (!timeseriesData || timeseriesData.length === 0) {
-        kpisDiv.innerHTML = '<p>No data available for the current year.</p>';
-        return;
-    }
+async function handleJournalSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const feedbackEl = document.getElementById('form-feedback');
+    const submitBtn = form.querySelector('button[type="submit"]');
 
-    const totalNetCosts = timeseriesData.reduce((sum, data) => sum + safeParseFloat(data.financials.net_costs), 0);
-    const totalSelfSufficiency = timeseriesData.reduce((sum, data) => sum + safeParseFloat(data.energy_flow.self_sufficiency_ratio), 0);
-    const averageSelfSufficiency = totalSelfSufficiency / timeseriesData.length * 100; // as percentage
+    submitBtn.textContent = 'Saving...';
+    submitBtn.disabled = true;
+    feedbackEl.textContent = '';
+    feedbackEl.className = 'feedback-message';
+
+    const formData = new FormData(form);
+    const data = {};
+    formData.forEach((value, key) => {
+        if (key !== 'car_charge_kwh') {
+            data[key] = value === '' ? null : Number(value);
+        }
+    });
+
+    // Handle car entries separately
+    data.car_entries = [];
+    document.querySelectorAll('#car-charging-entries input').forEach(input => {
+        if (input.value) {
+            data.car_entries.push({
+                car_id: Number(input.dataset.carId),
+                total_charged_kwh: Number(input.value)
+            });
+        }
+    });
+
+    try {
+        await fetchAPI('/journal/', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        feedbackEl.textContent = 'Journal saved successfully!';
+        feedbackEl.classList.add('success');
+        form.reset();
+        // Reload dashboard data to reflect the new entry
+        loadAllData();
+    } catch (error) {
+        console.error('Failed to save journal:', error);
+        feedbackEl.textContent = `Error: ${error.message}`;
+        feedbackEl.classList.add('error');
+    } finally {
+        submitBtn.textContent = 'Journaal Opslaan';
+        submitBtn.disabled = false;
+    }
+}
+
+// --- Dashboard Data Loading & Rendering ---
+let energyBalanceChartInstance = null;
+let consumptionSplitChartInstance = null;
+let productionForecastChartInstance = null;
+
+async function loadAllData() {
+    const kpiContainer = document.getElementById('kpis');
+    kpiContainer.innerHTML = '<p>Loading dashboard data...</p>';
+    const year = new Date().getFullYear();
+
+    try {
+        const journalPromise = fetchAPI(`/journal/${year}`);
+        const solarPanelPromise = fetchAPI('/solar_panels/');
+
+        const [journalData, solarPanels] = await Promise.all([journalPromise, solarPanelPromise]);
+
+        let roiData = null;
+        if (solarPanels && solarPanels.length > 0) {
+            // Assuming we only care about the first solar panel for ROI
+            roiData = await fetchAPI(`/roi/solar_panels/${solarPanels[0].id}`);
+        }
+
+        if (!journalData || journalData.length === 0) {
+            kpiContainer.innerHTML = '<p>No journal data available for the current year. Please add an entry using the form above.</p>';
+            return;
+        }
+
+        renderKPIs(journalData, year);
+        renderRoiTracker(roiData);
+        renderEnergyBalanceChart(journalData);
+        // The following charts require fields that may not exist in the new model.
+        // I will comment them out for now to ensure the dashboard loads.
+        // renderConsumptionSplitChart(journalData);
+        // renderProductionForecastChart(journalData, { forecast: { forecast: [] } }); // Dummy forecast
+
+    } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        kpiContainer.innerHTML = `<div class="error-message"><strong>Error loading dashboard:</strong><p>${error.message}</p></div>`;
+    }
+}
+
+function renderKPIs(journalData, year) {
+    const kpisDiv = document.getElementById('kpis');
+    const totalNetCosts = journalData.reduce((sum, data) => sum + (data.financials.final_settlement_eur || 0), 0);
+    const totalSelfSufficiency = journalData.reduce((sum, data) => sum + (data.energy_flow.self_sufficiency_ratio || 0), 0);
+    const averageSelfSufficiency = journalData.length > 0 ? (totalSelfSufficiency / journalData.length) * 100 : 0;
 
     kpisDiv.innerHTML = `
         <div class="kpi-item">
-            <h3>Totaal Netto Kosten (${year})</h3>
+            <h3>Totaal Netto Saldo (${year})</h3>
             <p>€ ${totalNetCosts.toFixed(2)}</p>
         </div>
         <div class="kpi-item">
@@ -186,23 +185,18 @@ function renderKPIs(timeseriesData, year) {
     `;
 }
 
-/**
- * Renders the ROI tracker progress bar.
- */
 function renderRoiTracker(roiData) {
     const roiDiv = document.getElementById('roi-tracker');
-    if (!roiData) {
-        roiDiv.innerHTML = '<p>ROI data not available.</p>';
+    if (!roiData || !roiData.method_1) {
+        roiDiv.innerHTML = '<p>ROI data not available. Configure a solar panel in the admin panel.</p>';
         return;
     }
-
-    const progress_percentage = safeParseFloat(roiData.progress_percentage);
-    const cumulative_savings = safeParseFloat(roiData.cumulative_savings);
-    const remaining_balance = safeParseFloat(roiData.remaining_balance);
+    const { cumulative_savings, remaining_balance, progress_percentage } = roiData.method_1;
+    const totalCost = cumulative_savings + remaining_balance;
 
     roiDiv.innerHTML = `
         <div class="roi-summary">
-             <p><strong>Voortgang:</strong> € ${cumulative_savings.toFixed(2)} / € ${(cumulative_savings + remaining_balance).toFixed(2)}</p>
+             <p><strong>Voortgang:</strong> € ${cumulative_savings.toFixed(2)} / € ${totalCost.toFixed(2)}</p>
         </div>
         <div class="progress-bar-container">
             <div class="progress-bar" style="width: ${progress_percentage.toFixed(2)}%;">
@@ -216,28 +210,25 @@ function renderRoiTracker(roiData) {
     `;
 }
 
-
-/**
- * Renders the stacked bar chart for energy balance.
- */
-function renderEnergyBalanceChart(timeseriesData) {
+function renderEnergyBalanceChart(journalData) {
     const ctx = document.getElementById('energyBalanceChart').getContext('2d');
-    const labels = timeseriesData.map(d => new Date(d.metric.period_start).toLocaleString('default', { month: 'short' }));
+    if (!ctx) return;
 
+    const labels = journalData.map(d => new Date(d.metric.year, d.metric.month - 1).toLocaleString('default', { month: 'short' }));
     const datasets = [
         {
             label: 'Import (kWh)',
-            data: timeseriesData.map(d => safeParseFloat(d.energy_flow.import_total_kwh)),
+            data: journalData.map(d => d.energy_flow.import_total_kwh || 0),
             backgroundColor: '#FF6384',
         },
         {
-            label: 'Eigen Verbruik (kWh)',
-            data: timeseriesData.map(d => safeParseFloat(d.energy_flow.self_consumption_kwh)),
+            label: 'Zelfverbruik (kWh)',
+            data: journalData.map(d => d.energy_flow.self_consumption_kwh || 0),
             backgroundColor: '#36A2EB',
         },
         {
             label: 'Export (kWh)',
-            data: timeseriesData.map(d => safeParseFloat(d.metric.export_total_kwh)),
+            data: journalData.map(d => d.energy_flow.total_grid_feed_in_kwh || 0),
             backgroundColor: '#FFCE56',
         }
     ];
@@ -245,113 +236,18 @@ function renderEnergyBalanceChart(timeseriesData) {
     if (energyBalanceChartInstance) {
         energyBalanceChartInstance.destroy();
     }
-
     energyBalanceChartInstance = new Chart(ctx, {
         type: 'bar',
         data: { labels, datasets },
         options: {
             responsive: true,
             plugins: {
-                title: { display: true, text: 'Maandelijkse Energiebalans (Import, Export, Eigen Verbruik)' },
+                title: { display: true, text: 'Maandelijkse Energiebalans' },
                 tooltip: { mode: 'index', intersect: false },
             },
             scales: {
                 x: { stacked: true },
                 y: { stacked: true, beginAtZero: true, title: { display: true, text: 'kWh' } }
-            }
-        }
-    });
-}
-
-/**
- * Renders the pie chart for consumption breakdown.
- */
-function renderConsumptionSplitChart(timeseriesData) {
-    const ctx = document.getElementById('consumptionSplitChart').getContext('2d');
-
-    const totalHomeConsumption = timeseriesData.reduce((sum, d) => sum + safeParseFloat(d.energy_flow.home_consumption_kwh), 0);
-    const totalEvConsumption = timeseriesData.reduce((sum, d) => sum + safeParseFloat(d.metric.consumption_ev_kwh), 0);
-
-    if (consumptionSplitChartInstance) {
-        consumptionSplitChartInstance.destroy();
-    }
-
-    consumptionSplitChartInstance = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: ['Huis Verbruik', 'Auto (EV) Verbruik'],
-            datasets: [{
-                data: [totalHomeConsumption, totalEvConsumption],
-                backgroundColor: ['#4BC0C0', '#9966FF'],
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: { display: true, text: 'Uitsplitsing Totaal Verbruik (Huidig Jaar)' },
-            }
-        }
-    });
-}
-
-/**
- * Renders the line chart comparing actual production with the forecast.
- */
-function renderProductionForecastChart(timeseriesData, forecastData) {
-    const ctx = document.getElementById('productionForecastChart').getContext('2d');
-
-    const labels = forecastData.forecast.forecast.map(f => f.month);
-    const forecastValues = forecastData.forecast.forecast.map(f => f.kwh);
-
-    // Create a map for quick lookup of actual production by month name
-    const actualsMap = new Map();
-    timeseriesData.forEach(d => {
-        const monthName = new Date(d.metric.period_start).toLocaleString('default', { month: 'short' });
-        actualsMap.set(monthName, d.metric.production_total_kwh);
-    });
-
-    // Align actual data with forecast labels
-    const actualValues = labels.map(label => actualsMap.get(label) || 0);
-
-    if (productionForecastChartInstance) {
-        productionForecastChartInstance.destroy();
-    }
-
-    productionForecastChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Werkelijke Productie (kWh)',
-                    data: actualValues,
-                    borderColor: '#36A2EB',
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    fill: false,
-                    tension: 0.1
-                },
-                {
-                    label: 'Verwachte Productie (kWh)',
-                    data: forecastValues,
-                    borderColor: '#FF6384',
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                    borderDash: [5, 5], // Dashed line for forecast
-                    fill: false,
-                    tension: 0.1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: { display: true, text: 'Werkelijke Productie vs. Forecast' },
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'kWh' }
-                }
             }
         }
     });

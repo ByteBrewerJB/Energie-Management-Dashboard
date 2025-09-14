@@ -6,10 +6,11 @@ from app.db.session import get_db
 from app.api import deps
 from app.schemas.battery import Battery, BatteryCreate, BatteryUpdate
 from app.crud import crud_battery
+from app.models import models
 
 router = APIRouter()
 
-@router.get("/batteries", response_model=List[Battery])
+@router.get("/", response_model=List[Battery])
 def read_batteries(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -23,7 +24,7 @@ def read_batteries(
     return batteries
 
 
-@router.post("/batteries", response_model=Battery, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=Battery, status_code=status.HTTP_201_CREATED)
 def create_battery(
     *,
     db: Session = Depends(get_db),
@@ -37,11 +38,12 @@ def create_battery(
     return battery
 
 
-@router.get("/batteries/{battery_id}", response_model=Battery)
+@router.get("/{battery_id}", response_model=Battery)
 def read_battery(
     *,
     db: Session = Depends(get_db),
     battery_id: int,
+    current_user: str = Depends(deps.get_current_user),
 ) -> Any:
     """
     Get a specific battery installation by its ID.
@@ -52,7 +54,7 @@ def read_battery(
     return battery
 
 
-@router.put("/batteries/{battery_id}", response_model=Battery)
+@router.put("/{battery_id}", response_model=Battery)
 def update_battery(
     *,
     db: Session = Depends(get_db),
@@ -71,7 +73,7 @@ def update_battery(
     return battery
 
 
-@router.delete("/batteries/{battery_id}", response_model=Battery)
+@router.delete("/{battery_id}", response_model=Battery)
 def delete_battery(
     *,
     db: Session = Depends(get_db),

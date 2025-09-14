@@ -8,7 +8,7 @@ from app.models import models
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-@router.post("/debug/clear-database", status_code=204)
+@router.post("/clear-database", status_code=204)
 def clear_database(
     db: Session = Depends(deps.get_db)
 ):
@@ -27,7 +27,7 @@ def clear_database(
 
 from app.crud import crud_debug
 
-@router.post("/debug/fill-database", status_code=200)
+@router.post("/fill-database", status_code=200)
 def fill_database(
     db: Session = Depends(deps.get_db)
 ):

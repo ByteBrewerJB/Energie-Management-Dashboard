@@ -47,6 +47,13 @@ def test_create_battery(db_session):
     assert data["name"] == "Test Battery"
     assert data["brand"] == "TestBrand"
 
+def test_create_battery_without_brand(db_session):
+    response = client.post("/api/batteries/", json={"name": "Test Battery No Brand", "purchase_date": "2023-01-01", "purchase_cost_eur": 3000, "capacity_kwh": 10.0})
+    assert response.status_code == 201
+    data = response.json()
+    assert data["name"] == "Test Battery No Brand"
+    assert data["brand"] is None
+
 def test_read_batteries(db_session):
     client.post("/api/batteries/", json={"name": "Test Battery 1", "purchase_date": "2023-01-01", "purchase_cost_eur": 3000, "capacity_kwh": 10.0})
     client.post("/api/batteries/", json={"name": "Test Battery 2", "purchase_date": "2023-01-02", "purchase_cost_eur": 3500, "capacity_kwh": 12.0})

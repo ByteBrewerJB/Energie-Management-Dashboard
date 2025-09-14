@@ -357,9 +357,12 @@ async function handleFormSubmit(event) {
 
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
+    const config = MODEL_CONFIG[modelName].fields;
 
+    // Only set non-required fields to null if they are empty.
+    // Let the backend handle validation for required fields.
     for (const key in data) {
-        if (data[key] === '') {
+        if (data[key] === '' && config[key] && !config[key].required) {
             data[key] = null;
         }
     }

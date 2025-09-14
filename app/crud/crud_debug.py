@@ -30,7 +30,7 @@ def fill_database_with_mock_data(db: Session):
     db.add(battery)
 
     car = models.Car(
-        name=fake.company() + " " + fake.license_plate(),
+        name=f"{fake.company()} {fake.license_plate()} {random.randint(1000, 9999)}",
         reimbursement_rate_eur_per_kwh=random.uniform(0.1, 0.3),
     )
     db.add(car)

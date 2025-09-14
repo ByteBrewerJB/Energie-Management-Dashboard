@@ -10,16 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize theme
     feather.replace();
 
-    // Setup Journal Form
-    const yearInput = document.getElementById('journal-year');
-    const monthInput = document.getElementById('journal-month');
-    const now = new Date();
-    yearInput.value = now.getFullYear();
-    monthInput.value = now.getMonth() + 1;
-
-    document.getElementById('journal-form').addEventListener('submit', handleJournalSubmit);
-    loadCarsAndPopulateForm();
-
     // Load dashboard data
     loadAllData();
 });
@@ -49,81 +39,6 @@ async function fetchAPI(endpoint, options = {}) {
         return null;
     }
     return response.json();
-}
-
-// --- Journal Form Logic ---
-async function loadCarsAndPopulateForm() {
-    const container = document.getElementById('car-charging-entries');
-    try {
-        const cars = await fetchAPI('/cars/');
-        if (cars.length === 0) {
-            container.innerHTML = '<p>No cars configured. Add one in the <a href="/admin">admin panel</a>.</p>';
-            return;
-        }
-        container.innerHTML = ''; // Clear loading message
-        cars.forEach(car => {
-            const formGroup = document.createElement('div');
-            formGroup.className = 'form-group';
-            formGroup.innerHTML = `
-                <label for="car-${car.id}">${car.name}</label>
-                <input type="number" step="0.01" name="car_charge_kwh" data-car-id="${car.id}">
-            `;
-            container.appendChild(formGroup);
-        });
-    } catch (error) {
-        console.error('Failed to load cars:', error);
-        container.innerHTML = `<p class="error-text">Could not load cars: ${error.message}</p>`;
-    }
-}
-
-async function handleJournalSubmit(event) {
-    event.preventDefault();
-    const form = event.target;
-    const feedbackEl = document.getElementById('form-feedback');
-    const submitBtn = form.querySelector('button[type="submit"]');
-
-    submitBtn.textContent = 'Saving...';
-    submitBtn.disabled = true;
-    feedbackEl.textContent = '';
-    feedbackEl.className = 'feedback-message';
-
-    const formData = new FormData(form);
-    const data = {};
-    formData.forEach((value, key) => {
-        if (key !== 'car_charge_kwh') {
-            data[key] = value === '' ? null : Number(value);
-        }
-    });
-
-    // Handle car entries separately
-    data.car_entries = [];
-    document.querySelectorAll('#car-charging-entries input').forEach(input => {
-        if (input.value) {
-            data.car_entries.push({
-                car_id: Number(input.dataset.carId),
-                total_charged_kwh: Number(input.value)
-            });
-        }
-    });
-
-    try {
-        await fetchAPI('/journal/', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-        feedbackEl.textContent = 'Journal saved successfully!';
-        feedbackEl.classList.add('success');
-        form.reset();
-        // Reload dashboard data to reflect the new entry
-        loadAllData();
-    } catch (error) {
-        console.error('Failed to save journal:', error);
-        feedbackEl.textContent = `Error: ${error.message}`;
-        feedbackEl.classList.add('error');
-    } finally {
-        submitBtn.textContent = 'Journaal Opslaan';
-        submitBtn.disabled = false;
-    }
 }
 
 // --- Dashboard Data Loading & Rendering ---

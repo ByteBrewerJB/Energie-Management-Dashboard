@@ -262,3 +262,9 @@ footer {
 .error-message::before {
     content: "⚠️ "; /* Placeholder for a better icon */
 }
+
+.main-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}

@@ -125,6 +125,57 @@ tr:hover {
     display: block;
 }
 
+/* Journal Form Styling */
+#journal-form {
+    display: grid;
+    gap: 20px;
+}
+
+#journal-form .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+#journal-form fieldset {
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-l);
+    border-radius: var(--border-radius);
+}
+
+#journal-form legend {
+    font-weight: var(--fw-semibold);
+    padding: 0 var(--spacing-s);
+}
+
+#journal-form .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+#journal-form .form-group {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    align-items: center;
+    gap: 15px;
+}
+
+#journal-form label {
+    text-align: right;
+    font-weight: var(--fw-semibold);
+}
+
+#journal-form input,
+#journal-form select {
+    width: 100%;
+    padding: var(--spacing-s);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--background-color);
+    color: var(--primary-text-color);
+}
+
 /* Buttons */
 .add-new-btn, .edit-btn, .delete-btn {
     background-color: var(--accent-color);

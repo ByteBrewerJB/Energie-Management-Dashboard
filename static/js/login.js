@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             localStorage.setItem('access_token', data.access_token);
 
-            // Redirect to the admin page on successful login
-            window.location.href = '/admin';
+            // Redirect to the dashboard on successful login
+            window.location.href = '/';
 
         } catch (error) {
             errorMessage.textContent = `Error: ${error.message}`;

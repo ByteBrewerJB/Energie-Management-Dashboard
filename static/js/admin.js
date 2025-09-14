@@ -51,6 +51,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Delegated event listeners for table actions
     document.querySelector('main').addEventListener('click', e => {
+        // Specific handler for Journal Edit buttons MUST come first
+        const journalEditBtn = e.target.closest('.journal-edit-btn');
+        if (journalEditBtn) {
+            const journalData = JSON.parse(journalEditBtn.dataset.journal);
+            populateJournalForm(journalData);
+            return; // Stop further processing
+        }
+
+        // Generic handler for other edit/delete buttons
         const button = e.target.closest('.edit-btn, .delete-btn');
         if (button) {
             const model = button.dataset.model;
@@ -68,12 +77,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup Journal Form
     const yearInput = document.getElementById('journal-year');
     const monthInput = document.getElementById('journal-month');
+    const metricYearSelector = document.getElementById('metric-year-selector');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
     if (yearInput && monthInput) {
         const now = new Date();
-        yearInput.value = now.getFullYear();
+        const currentYear = now.getFullYear();
+
+        // Populate year selector for metrics tab
+        if (metricYearSelector) {
+            for (let i = currentYear + 1; i >= currentYear - 5; i--) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                metricYearSelector.appendChild(option);
+            }
+            metricYearSelector.value = currentYear; // Set default value
+        }
+
+        yearInput.value = currentYear;
         monthInput.value = now.getMonth() + 1;
         document.getElementById('journal-form').addEventListener('submit', handleJournalSubmit);
         loadCarsAndPopulateForm();
+
+        // Add event listener for year change
+        if (metricYearSelector) {
+            metricYearSelector.addEventListener('change', () => {
+                if (document.getElementById('metrics').classList.contains('active')) {
+                    loadAndDisplayJournals(metricYearSelector.value);
+                }
+            });
+        }
+
+        // Add event listener for the cancel button
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', () => {
+                resetJournalForm();
+            });
+        }
     }
 
     // Initial data load
@@ -148,6 +189,11 @@ function loadDataForTab(tabName) {
         loadInvestmentsTab();
     } else if (tabName === 'tariffs') {
         loadGenericTab('tariffs');
+    } else if (tabName === 'metrics') {
+        const selectedYear = document.getElementById('metric-year-selector').value;
+        if (selectedYear) {
+            loadAndDisplayJournals(selectedYear);
+        }
     }
 }
 
@@ -387,6 +433,159 @@ async function handleFormSubmit(event) {
 }
 
 // --- Journal Form Logic ---
+
+async function loadAndDisplayJournals(year) {
+    const container = document.getElementById('metrics-table-container');
+    container.innerHTML = '<em>Loading journals...</em>';
+
+    try {
+        const journals = await fetchAPI(`/journal/${year}`);
+        if (!journals || journals.length === 0) {
+            container.innerHTML = `<p>No journal entries found for ${year}.</p>`;
+            return;
+        }
+        const table = createJournalTable(journals);
+        container.innerHTML = '';
+        container.appendChild(table);
+    } catch (error) {
+        console.error(`Failed to load journals for year ${year}:`, error);
+        container.innerHTML = `<p class="error-text">Error loading journals: ${error.message}</p>`;
+    }
+}
+
+function createJournalTable(journals) {
+    const table = document.createElement('table');
+    table.className = 'data-table'; // Use existing class for styling
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+
+    const headerRow = document.createElement('tr');
+    ['Year', 'Month', 'Actions'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    // Sort journals by month descending before creating rows
+    journals.sort((a, b) => b.metric.month - a.metric.month);
+
+    journals.forEach(journalData => {
+        const row = document.createElement('tr');
+        // The raw journal data is in the 'metric' property
+        const journal = journalData.metric;
+
+        const yearCell = document.createElement('td');
+        yearCell.textContent = journal.year;
+        row.appendChild(yearCell);
+
+        const monthCell = document.createElement('td');
+        // Convert month number to name
+        const monthName = new Date(journal.year, journal.month - 1).toLocaleString('nl-NL', { month: 'long' });
+        monthCell.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        row.appendChild(monthCell);
+
+        const actionsCell = document.createElement('td');
+        actionsCell.className = 'actions-cell';
+        const editButton = document.createElement('button');
+        editButton.innerHTML = '<i data-feather="edit-2" class="btn-icon"></i> Bewerken';
+        editButton.className = 'journal-edit-btn';
+        editButton.title = `Edit journal for ${monthName} ${journal.year}`;
+
+        // Store the full data object on the button. This is simpler for the next step.
+        editButton.dataset.journal = JSON.stringify(journalData);
+        actionsCell.appendChild(editButton);
+        row.appendChild(actionsCell);
+
+        tbody.appendChild(row);
+    });
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    feather.replace(); // To render the new icons
+    return table;
+}
+
+function populateJournalForm(journalData) {
+    const form = document.getElementById('journal-form');
+    const journal = journalData.metric; // The core data
+
+    // Reset form to clear any previous state or validation
+    form.reset();
+
+    // Set form to "edit mode" and store identifiers
+    form.dataset.editingYear = journal.year;
+    form.dataset.editingMonth = journal.month;
+
+    // Update form title
+    const titleElement = document.querySelector('#journal-entry-card h2');
+    if (titleElement) {
+        const monthName = new Date(journal.year, journal.month - 1).toLocaleString('nl-NL', { month: 'long' });
+        titleElement.innerHTML = `<i data-feather="edit"></i> Journaal Bewerken voor ${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${journal.year}`;
+        feather.replace();
+    }
+
+    // Populate all fields from the journal object
+    for (const key in journal) {
+        if (Object.prototype.hasOwnProperty.call(journal, key)) {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) {
+                input.value = journal[key];
+            }
+        }
+    }
+
+    // Populate car entries
+    if (journal.car_entries && journal.car_entries.length > 0) {
+        journal.car_entries.forEach(entry => {
+            const carInput = form.querySelector(`input[data-car-id="${entry.car_id}"]`);
+            if (carInput) {
+                carInput.value = entry.total_charged_kwh;
+            }
+        });
+    }
+
+    // Show cancel button
+    document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+    // Scroll to the form to make it visible
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function resetJournalForm() {
+    const form = document.getElementById('journal-form');
+    form.reset();
+
+    // Remove editing state
+    delete form.dataset.editingYear;
+    delete form.dataset.editingMonth;
+
+    // Reset title
+    const titleElement = document.querySelector('#journal-entry-card h2');
+    if (titleElement) {
+        titleElement.innerHTML = `<i data-feather="edit"></i> Maandjournaal Invoeren`;
+        feather.replace();
+    }
+
+    // Reset year and month dropdowns to current
+    const now = new Date();
+    const yearInput = document.getElementById('journal-year');
+    const monthInput = document.getElementById('journal-month');
+    if (yearInput) yearInput.value = now.getFullYear();
+    if (monthInput) monthInput.value = now.getMonth() + 1;
+
+    // Clear feedback message
+    const feedbackEl = document.getElementById('form-feedback');
+    if(feedbackEl) {
+        feedbackEl.textContent = '';
+        feedbackEl.className = 'feedback-message';
+    }
+
+    // Hide cancel button
+    document.getElementById('cancel-edit-btn').classList.add('hidden');
+}
+
+
 async function loadCarsAndPopulateForm() {
     const container = document.getElementById('car-charging-entries');
     if (!container) return;
@@ -427,9 +626,19 @@ async function handleJournalSubmit(event) {
     const data = {};
     formData.forEach((value, key) => {
         if (key !== 'car_charge_kwh') {
-            data[key] = value === '' ? null : Number(value);
+            // For number fields, convert empty string to null instead of 0
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input && input.type === 'number') {
+                data[key] = value === '' ? null : Number(value);
+            } else {
+                data[key] = value;
+            }
         }
     });
+    // Year and month are required, ensure they are numbers
+    data.year = Number(formData.get('year'));
+    data.month = Number(formData.get('month'));
+
 
     // Handle car entries separately
     data.car_entries = [];
@@ -442,18 +651,27 @@ async function handleJournalSubmit(event) {
         }
     });
 
+    const isEditing = !!form.dataset.editingYear;
+    const method = isEditing ? 'PUT' : 'POST';
+    const yearToUpdate = isEditing ? form.dataset.editingYear : data.year;
+    const monthToUpdate = isEditing ? form.dataset.editingMonth : data.month;
+    const endpoint = isEditing ? `/journal/${yearToUpdate}/${monthToUpdate}` : '/journal/';
+
     try {
-        await fetchAPI('/journal/', {
-            method: 'POST',
+        await fetchAPI(endpoint, {
+            method: method,
             body: JSON.stringify(data),
         });
-        feedbackEl.textContent = 'Journal saved successfully!';
+
+        feedbackEl.textContent = `Journal for ${data.year}-${data.month} saved successfully!`;
         feedbackEl.classList.add('success');
-        form.reset();
-        // Optionally, reload metrics data if on the metrics tab
-        if (document.getElementById('metrics').classList.contains('active')) {
-            // You might need a function here to reload the metrics table
-        }
+
+        resetJournalForm();
+
+        // Reload the journal table to show the new data
+        const selectedYear = document.getElementById('metric-year-selector').value;
+        loadAndDisplayJournals(selectedYear);
+
     } catch (error) {
         console.error('Failed to save journal:', error);
         feedbackEl.textContent = `Error: ${error.message}`;

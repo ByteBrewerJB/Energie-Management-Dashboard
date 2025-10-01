@@ -49,7 +49,7 @@ backend/
    ```bash
    uvicorn backend.app.main:app --reload
    ```
-5. Applicatie is bereikbaar via `http://localhost:8000`. De API-documentatie staat op `/docs` (vereist inloggen voor beveiligde endpoints).
+5. Applicatie is bereikbaar via `http://localhost:5210`. De API-documentatie staat op `/docs` (vereist inloggen voor beveiligde endpoints).
 
 ## Docker (PostgreSQL + backend)
 1. Kopieer `.env.example` naar `.env` wanneer je custom secrets wilt instellen.
@@ -57,7 +57,7 @@ backend/
    ```bash
    docker-compose up --build
    ```
-3. Backend draait op `http://localhost:8000`, database op poort `5432`.
+3. Backend draait op `http://localhost:5210`, database op poort `5544`.
 
 ## Authenticatie
 - Nieuwe gebruikers kunnen zichzelf registreren via `/register` of via de API (`POST /api/auth/register`).

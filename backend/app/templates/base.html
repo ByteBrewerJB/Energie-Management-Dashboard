@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}JouleJournal{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}" />
+    <script>
+        (function () {
+            const storedTheme = localStorage.getItem('jj-theme');
+            if (storedTheme) {
+                document.documentElement.setAttribute('data-theme', storedTheme);
+            }
+        })();
+    </script>
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">? JouleJournal</div>
+    <nav class="nav">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/journals">Maandjournaal</a>
+        <a href="/assets">Assets</a>
+        <a href="/cars">Auto's</a>
+    </nav>
+    <div class="topbar-actions">
+        <button id="theme-toggle" title="Schakel thema">??</button>
+        <a href="/logout" class="logout">Log uit</a>
+    </div>
+</header>
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+<script>
+    const toggle = document.getElementById('theme-toggle');
+    if (toggle) {
+        toggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', current);
+            localStorage.setItem('jj-theme', current);
+        });
+    }
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

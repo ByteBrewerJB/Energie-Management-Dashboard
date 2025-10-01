@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Maandjournaal - JouleJournal{% endblock %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Maandjournaal</h1>
+        <p>Vul hier maandelijks je energiegegevens in om het dashboard actueel te houden.</p>
+    </div>
+    {% if message %}
+    <div class="alert alert-info">{{ message }}</div>
+    {% endif %}
+</section>
+
+<div class="layout-split">
+    <section class="panel">
+        <h2>Ingevoerde maanden</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Jaar</th>
+                    <th>Maand</th>
+                    <th>Productie (kWh)</th>
+                    <th>Verbruik (kWh)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in journals %}
+                <tr>
+                    <td>{{ entry.year }}</td>
+                    <td>{{ '%02d'|format(entry.month) }}</td>
+                    <td>{{ entry.solar_production_kwh or '-' }}</td>
+                    <td>{{ entry.total_house_consumption_kwh or '-' }}</td>
+                    <td class="actions">
+                        <a class="btn-link" href="/journals?journal_id={{ entry.id }}">Bewerken</a>
+                        <form method="post" action="/journals/{{ entry.id }}/delete" onsubmit="return confirm('Journaal verwijderen?');">
+                            <button type="submit" class="btn-link danger">Verwijder</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="empty">Nog geen data ingevoerd.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel">
+        <h2>{% if journal %}Journaal bijwerken{% else %}Nieuw journaal{% endif %}</h2>
+        <form method="post" action="/journals/save" class="form-grid">
+            <input type="hidden" name="journal_id" value="{{ journal.id if journal else '' }}" />
+            <label>Jaar
+                <input type="number" name="year" min="2000" max="2100" required value="{{ journal.year if journal else '' }}" />
+            </label>
+            <label>Maand
+                <input type="number" name="month" min="1" max="12" required value="{{ journal.month if journal else '' }}" />
+            </label>
+
+            <label>Verbruik P1 tarief 1 (kWh)
+                <input type="number" step="0.01" name="consumption_tariff_1_kwh" value="{{ journal.consumption_tariff_1_kwh if journal else '' }}" />
+            </label>
+            <label>Verbruik P1 tarief 2 (kWh)
+                <input type="number" step="0.01" name="consumption_tariff_2_kwh" value="{{ journal.consumption_tariff_2_kwh if journal else '' }}" />
+            </label>
+            <label>Teruglevering zonder batterij (kWh)
+                <input type="number" step="0.01" name="feed_in_without_battery_kwh" value="{{ journal.feed_in_without_battery_kwh if journal else '' }}" />
+            </label>
+            <label>Totaal gebruik aan stroom in huis (kWh)
+                <input type="number" step="0.01" name="total_house_consumption_kwh" value="{{ journal.total_house_consumption_kwh if journal else '' }}" />
+            </label>
+            <label>Tarief verbruik dal (€/kWh)
+                <input type="number" step="0.0001" name="avg_consumption_tariff_low_eur_kwh" value="{{ journal.avg_consumption_tariff_low_eur_kwh if journal else '' }}" />
+            </label>
+            <label>Tarief verbruik piek (€/kWh)
+                <input type="number" step="0.0001" name="avg_consumption_tariff_high_eur_kwh" value="{{ journal.avg_consumption_tariff_high_eur_kwh if journal else '' }}" />
+            </label>
+            <label>Terugleveringstarief (€/kWh)
+                <input type="number" step="0.0001" name="avg_feed_in_tariff_eur_kwh" value="{{ journal.avg_feed_in_tariff_eur_kwh if journal else '' }}" />
+            </label>
+            <label>Totale zonneproductie (kWh)
+                <input type="number" step="0.01" name="solar_production_kwh" value="{{ journal.solar_production_kwh if journal else '' }}" />
+            </label>
+            <label>Batterij opladen (kWh)
+                <input type="number" step="0.01" name="battery_charge_kwh" value="{{ journal.battery_charge_kwh if journal else '' }}" />
+            </label>
+            <label>Batterij ontladen (kWh)
+                <input type="number" step="0.01" name="battery_discharge_kwh" value="{{ journal.battery_discharge_kwh if journal else '' }}" />
+            </label>
+            <label>Voorschotbedrag (€)
+                <input type="number" step="0.01" name="advance_payment_eur" value="{{ journal.advance_payment_eur if journal else '' }}" />
+            </label>
+            <label>Kosten leverancier (€)
+                <input type="number" step="0.01" name="supplier_costs_eur" value="{{ journal.supplier_costs_eur if journal else '' }}" />
+            </label>
+
+            {% if cars %}
+            <fieldset class="car-charges">
+                <legend>Autoladingen</legend>
+                {% for car in cars %}
+                <label>{{ car.name }} geladen (kWh)
+                    <input type="number" step="0.01" name="car_{{ car.id }}_charged_kwh" value="{{ car_charge_map.get(car.id) if journal else '' }}" />
+                </label>
+                {% endfor %}
+            </fieldset>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Opslaan</button>
+                {% if journal %}
+                <a href="/journals" class="btn-secondary">Nieuwe invoer</a>
+                {% endif %}
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Auto''s - JouleJournal{% endblock %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Elektrische auto''s</h1>
+        <p>Beheer hier de auto''s en bijbehorende vergoedingspercentages voor declaraties.</p>
+    </div>
+    {% if message %}
+    <div class="alert alert-info">{{ message }}</div>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Nieuwe auto toevoegen</h2>
+    <form method="post" action="/cars" class="form-grid">
+        <label>Naam / kenteken
+            <input type="text" name="name" required />
+        </label>
+        <label>Vergoedingstarief ex. btw (€/kWh)
+            <input type="number" step="0.0001" name="rate_ex_vat" />
+        </label>
+        <label>Vergoedingstarief incl. btw (€/kWh)
+            <input type="number" step="0.0001" name="rate_inc_vat" />
+        </label>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Toevoegen</button>
+        </div>
+    </form>
+</section>
+
+<section class="panel">
+    <h2>Bestaande auto''s</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Naam</th>
+                <th>Tarief ex. btw</th>
+                <th>Tarief incl. btw</th>
+                <th>Status</th>
+                <th>Acties</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for car in cars %}
+            <tr>
+                <td colspan="5">
+                    <form method="post" action="/cars/{{ car.id }}" class="inline-form">
+                        <input type="text" name="name" value="{{ car.name }}" required />
+                        <input type="number" step="0.0001" name="rate_ex_vat" value="{{ car.reimbursement_rate_ex_vat_eur_kwh or '' }}" />
+                        <input type="number" step="0.0001" name="rate_inc_vat" value="{{ car.reimbursement_rate_inc_vat_eur_kwh or '' }}" />
+                        <label class="checkbox">
+                            <input type="checkbox" name="is_active" {% if car.is_active %}checked{% endif %} /> Actief
+                        </label>
+                        <button type="submit" class="btn-secondary">Opslaan</button>
+                    </form>
+                    <form method="post" action="/cars/{{ car.id }}/delete" class="inline-form" onsubmit="return confirm('Auto verwijderen?');">
+                        <button type="submit" class="btn-link danger">Verwijder</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="empty">Nog geen auto''s geregistreerd.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

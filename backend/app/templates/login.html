@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inloggen - JouleJournal</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}" />
+</head>
+<body class="auth-body">
+    <section class="auth-card">
+        <h1>Welkom bij JouleJournal</h1>
+        <p class="auth-subtitle">Log in om je energiebeheer te bekijken.</p>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        <form method="post" action="/login" class="auth-form">
+            <label>E-mailadres
+                <input type="email" name="email" required autocomplete="username" />
+            </label>
+            <label>Wachtwoord
+                <input type="password" name="password" required autocomplete="current-password" />
+            </label>
+            <button type="submit" class="btn-primary">Inloggen</button>
+        </form>
+        <p class="auth-footer">Nog geen account? <a href="/register">Registreer nu</a>.</p>
+    </section>
+</body>
+</html>

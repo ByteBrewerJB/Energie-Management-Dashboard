@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - JouleJournal{% endblock %}
+{% block content %}
+<section class="toolbar">
+    <form method="get" action="/dashboard" class="year-selector">
+        <label>Jaar
+            <select name="year" onchange="this.form.submit()">
+                {% for y in available_years %}
+                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </form>
+    <div class="roi-summary">
+        <span class="label">Totale investering</span>
+        <span class="value">€ {{ '%.2f'|format(roi.total_investment_eur) }}</span>
+        <span class="label">Opgebouwde besparing</span>
+        <span class="value">€ {{ '%.2f'|format(roi.total_savings_eur) }}</span>
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ (roi.progress_ratio * 100)|round(1) }}%"></div>
+        </div>
+        <span class="progress-label">ROI {{ (roi.progress_ratio * 100)|round(1) }}%</span>
+    </div>
+</section>
+
+<section class="kpi-grid">
+    {% for item in dashboard.kpis %}
+    <article class="kpi-card">
+        <header>{{ item.month_label }}</header>
+        <dl>
+            <div><dt>Netto saldo</dt><dd>€ {{ '%.2f'|format(item.net_balance_eur) }}</dd></div>
+            <div><dt>Zelfvoorzienendheid</dt><dd>{{ '%.1f'|format(item.self_sufficiency_pct) }}%</dd></div>
+            <div><dt>Productie</dt><dd>{{ '%.1f'|format(item.total_production_kwh) }} kWh</dd></div>
+            <div><dt>Verbruik</dt><dd>{{ '%.1f'|format(item.total_consumption_kwh) }} kWh</dd></div>
+            <div><dt>Besparing</dt><dd>€ {{ '%.2f'|format(item.savings_eur) }}</dd></div>
+        </dl>
+    </article>
+    {% endfor %}
+</section>
+
+<section class="charts-grid">
+    <article class="chart-card">
+        <h2>Energiebalans</h2>
+        <canvas id="energyBalanceChart"></canvas>
+    </article>
+    <article class="chart-card">
+        <h2>Verbruikssplitsing</h2>
+        <canvas id="consumptionSplitChart"></canvas>
+    </article>
+    <article class="chart-card full-width">
+        <h2>Productie vs. verwachting</h2>
+        <canvas id="productionChart"></canvas>
+    </article>
+    <article class="chart-card full-width">
+        <h2>Financieel overzicht</h2>
+        <canvas id="financialChart"></canvas>
+    </article>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const dashboardData = {{ dashboard.model_dump() | tojson }};
+</script>
+<script src="{{ url_for('static', path='/js/dashboard.js') }}"></script>
+{% endblock %}

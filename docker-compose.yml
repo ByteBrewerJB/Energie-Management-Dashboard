@@ -1,50 +1,31 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  db:
-    image: postgres:15
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-joulejournal}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
-      - POSTGRES_DB=${POSTGRES_DB:-joulejournal}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-joulejournal} -d ${POSTGRES_DB:-joulejournal}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   backend:
     build:
-      context: .
-      args:
-        - PORT=${PORT:-5201}
-    ports:
-      - "${PORT:-5201}:${PORT:-5201}"
-    depends_on:
-      db:
-        condition: service_healthy
+      context: ./backend
     environment:
-      - PORT=${PORT:-5201}
-      - ADMIN_USER=${ADMIN_USER}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-joulejournal}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-joulejournal}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - BACKEND_CORS_ORIGINS=http://localhost:${PORT:-5201},http://127.0.0.1:${PORT:-5201},http://192.168.0.178:${PORT:-5201}
-    command: >
-      bash -lc "
-        set -euxo pipefail
-        echo '--- Running database migrations ---'
-        alembic upgrade head
-        echo '--- Database migrations complete ---'
-        echo '--- NOTE: Database seeding is now handled manually via the admin interface. ---'
-        echo '--- Starting web server ---'
-        uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-5201}
-      "
-    restart: always
+      DATABASE_URL: postgresql+psycopg2://jj:jjpass@db:5432/joulejournal
+      SECRET_KEY: super-secret-change-me
+      ACCESS_TOKEN_EXPIRES_MINUTES: 1440
+    volumes:
+      - ./backend/app:/app/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: joulejournal
+      POSTGRES_USER: jj
+      POSTGRES_PASSWORD: jjpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
 volumes:
-  postgres_data:
+  postgres_data: {}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Assets - JouleJournal{% endblock %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Installaties & Assets</h1>
+        <p>Beheer hier de gegevens van je zonnepanelen, batterij en zie de voortgang van je ROI.</p>
+    </div>
+    {% if message %}
+    <div class="alert alert-info">{{ message }}</div>
+    {% endif %}
+</section>
+
+<div class="layout-split">
+    <section class="panel">
+        <h2>Zonnepanelen</h2>
+        <form method="post" action="/assets/solar" class="form-grid">
+            <label>Aanschafdatum
+                <input type="date" name="purchase_date" value="{{ solar.purchase_date if solar and solar.purchase_date else '' }}" />
+            </label>
+            <label>Aanschafkosten (€)
+                <input type="number" step="0.01" name="purchase_cost_eur" value="{{ solar.purchase_cost_eur if solar else '' }}" />
+            </label>
+            <label>Totaal vermogen (Wp)
+                <input type="number" step="1" name="total_power_wp" value="{{ solar.total_power_wp if solar else '' }}" />
+            </label>
+            <label>Verwachte jaaropbrengst (kWh)
+                <input type="number" step="1" name="expected_annual_yield_kwh" value="{{ solar.expected_annual_yield_kwh if solar else '' }}" />
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Opslaan</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Thuisbatterij</h2>
+        <form method="post" action="/assets/battery" class="form-grid">
+            <label>Aanschafdatum
+                <input type="date" name="purchase_date" value="{{ battery.purchase_date if battery and battery.purchase_date else '' }}" />
+            </label>
+            <label>Aanschafkosten (€)
+                <input type="number" step="0.01" name="purchase_cost_eur" value="{{ battery.purchase_cost_eur if battery else '' }}" />
+            </label>
+            <label>Capaciteit (kWh)
+                <input type="number" step="0.01" name="capacity_kwh" value="{{ battery.capacity_kwh if battery else '' }}" />
+            </label>
+            <label>Merk / Model
+                <input type="text" name="brand_model" value="{{ battery.brand_model if battery else '' }}" />
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Opslaan</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<section class="panel roi-panel">
+    <h2>ROI Voortgang</h2>
+    <div class="roi-stats">
+        <div>
+            <span class="label">Investering</span>
+            <span class="value">€ {{ '%.2f'|format(roi.total_investment_eur) }}</span>
+        </div>
+        <div>
+            <span class="label">Besparingen</span>
+            <span class="value">€ {{ '%.2f'|format(roi.total_savings_eur) }}</span>
+        </div>
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ (roi.progress_ratio * 100)|round(1) }}%"></div>
+        </div>
+        <span class="progress-label">{{ (roi.progress_ratio * 100)|round(1) }}% van de investering is terugverdiend.</span>
+    </div>
+</section>
+{% endblock %}

@@ -6,7 +6,6 @@ from app.db.session import get_db
 from app.api import deps
 from app.schemas.car import Car, CarCreate, CarUpdate
 from app.crud import crud_car
-from app.models import models
 
 router = APIRouter()
 

@@ -1,11 +1,15 @@
-from pydantic import BaseModel
+"""Pydantic schemas for battery resources."""
+
 from datetime import date
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
-# Shared properties
 class BatteryBase(BaseModel):
+    """Shared properties for battery resources."""
+
     name: Optional[str] = None
     brand: Optional[str] = None
     purchase_date: Optional[date] = None
@@ -13,31 +17,34 @@ class BatteryBase(BaseModel):
     capacity_kwh: Optional[float] = None
 
 
-# Properties to receive on item creation
 class BatteryCreate(BatteryBase):
+    """Properties required to create a battery."""
+
     name: str
     purchase_date: date
     purchase_cost_eur: Decimal
     capacity_kwh: float
 
 
-# Properties to receive on item update
 class BatteryUpdate(BatteryBase):
+    """Properties that can be updated for a battery."""
+
     pass
 
 
-# Properties shared by models stored in DB
 class BatteryInDBBase(BatteryBase):
+    """Base properties stored in the database."""
+
     id: int
     name: str
     purchase_date: date
     purchase_cost_eur: Decimal
     capacity_kwh: float
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
-# Properties to return to client
 class Battery(BatteryInDBBase):
+    """Properties returned to the API client."""
+
     pass

@@ -1,7 +1,10 @@
-from pydantic import BaseModel
-from typing import Optional
+"""Pydantic schemas for tariff resources."""
+
 from datetime import date
 from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 # --- Base Properties ---
 class TariffBase(BaseModel):
@@ -31,8 +34,7 @@ class TariffUpdate(BaseModel):
 class TariffInDBBase(TariffBase):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # --- Properties to return to client ---
 class Tariff(TariffInDBBase):

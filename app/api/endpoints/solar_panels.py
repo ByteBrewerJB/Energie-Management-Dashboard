@@ -6,7 +6,6 @@ from app.db.session import get_db
 from app.api import deps
 from app.schemas.solar_panel import SolarPanel, SolarPanelCreate, SolarPanelUpdate
 from app.crud import crud_solar_panel
-from app.models import models
 
 router = APIRouter()
 

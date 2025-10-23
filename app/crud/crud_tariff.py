@@ -1,5 +1,6 @@
-from sqlalchemy.orm import Session
 from typing import List, Optional
+
+from sqlalchemy.orm import Session
 
 from app.models import models
 from app.schemas.tariff import TariffCreate, TariffUpdate
@@ -23,7 +24,7 @@ def create(db: Session, *, obj_in: TariffCreate) -> models.Tariff:
     """
     Creates a new tariff record.
     """
-    db_obj = models.Tariff(**obj_in.dict())
+    db_obj = models.Tariff(**obj_in.model_dump())
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
@@ -36,7 +37,7 @@ def update(
     """
     Updates an existing tariff record.
     """
-    update_data = obj_in.dict(exclude_unset=True)
+    update_data = obj_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_obj, field, value)
 

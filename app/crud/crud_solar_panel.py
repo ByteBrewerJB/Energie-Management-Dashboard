@@ -1,5 +1,6 @@
-from sqlalchemy.orm import Session
 from typing import List, Optional
+
+from sqlalchemy.orm import Session
 
 from app.models import models
 from app.schemas.solar_panel import SolarPanelCreate, SolarPanelUpdate

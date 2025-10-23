@@ -9,7 +9,7 @@ from app.services import roi_calculations
 router = APIRouter()
 
 
-@router.get("/roi/solar_panels/{solar_panel_id}", response_model=ROIStatus)
+@router.get("/solar_panels/{solar_panel_id}", response_model=ROIStatus)
 def get_solar_panel_roi_status(
     solar_panel_id: int,
     db: Session = Depends(get_db),
@@ -26,7 +26,7 @@ def get_solar_panel_roi_status(
     return roi_status
 
 
-@router.get("/roi/batteries/{battery_id}", response_model=ROIStatus)
+@router.get("/batteries/{battery_id}", response_model=ROIStatus)
 def get_battery_roi_status(
     battery_id: int,
     db: Session = Depends(get_db),

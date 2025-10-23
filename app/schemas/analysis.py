@@ -1,6 +1,8 @@
-from pydantic import BaseModel
-from typing import Dict, Any
-from .metrics import MonthlyMetric
+"""Schemas that bundle calculated analysis results."""
+
+from pydantic import BaseModel, ConfigDict
+
+from .journal import MonthlyJournal
 
 
 class EnergyFlowResult(BaseModel):
@@ -25,9 +27,8 @@ class MonthlyAnalysisResult(BaseModel):
     A comprehensive schema for a single month's analysis, combining the
     raw metric data with calculated energy and financial results.
     """
-    metric: MonthlyMetric
+    metric: MonthlyJournal
     energy_flow: EnergyFlowResult
     financials: FinancialResult
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

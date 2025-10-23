@@ -6,7 +6,6 @@ from app.db.session import get_db
 from app.api import deps
 from app.schemas.battery import Battery, BatteryCreate, BatteryUpdate
 from app.crud import crud_battery
-from app.models import models
 
 router = APIRouter()
 

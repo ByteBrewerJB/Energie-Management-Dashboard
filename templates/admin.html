@@ -3,172 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JouleJournal - Admin Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.2/feather.min.js"></script>
+    <title>JouleJournal - Beheer</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/admin.css">
     <link rel="stylesheet" href="/static/css/theme.css">
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <h2>JouleJournal Admin</h2>
-            <nav>
-                <ul>
-                    <li><a href="/">Home Dashboard</a></li>
-                    <li><button id="logout-button">Logout</button></li>
-                </ul>
-            </nav>
-            <div class="theme-switcher-container">
-                <label class="switch">
-                    <input type="checkbox" id="theme-toggle">
-                    <span class="slider round"></span>
-                </label>
-                <span id="theme-label">Dark Mode</span>
-            </div>
+    <header class="page-header">
+        <h1>JouleJournal Beheer</h1>
+        <div class="header-actions">
+            <button id="logout-button" class="btn-secondary">Uitloggen</button>
+            <a href="/" class="btn-primary">Naar Dashboard</a>
         </div>
-        <div class="content">
-            <header>
-                <h1>Admin Dashboard</h1>
-            </header>
-            <main>
-                <div class="tabs">
-                    <button class="tab-link active" data-tab="investments">Investments</button>
-                    <button class="tab-link" data-tab="tariffs">Tariffs</button>
-                    <button class="tab-link" data-tab="metrics">Monthly Metrics</button>
-                    <button class="tab-link" data-tab="debug">Debug</button>
+    </header>
+
+    <main class="page-content">
+        <section class="card">
+            <h2>Zonnepanelen Installatie</h2>
+            <p>Beheer de gegevens van de zonnepanelen-installatie. Er wordt maximaal één installatie ondersteund.</p>
+            <form id="solar-panel-form" class="simple-form">
+                <div class="form-grid">
+                    <label>
+                        Naam
+                        <input type="text" name="name" required placeholder="Bijv. Zonnepanelen Dak Zuid">
+                    </label>
+                    <label>
+                        Aankoopdatum
+                        <input type="date" name="purchase_date" required>
+                    </label>
+                    <label>
+                        Aankoopkosten (€)
+                        <input type="number" name="purchase_cost_eur" step="0.01" required>
+                    </label>
+                    <label>
+                        Totale Vermogen (Wp)
+                        <input type="number" name="total_power_wp" step="0.01" required>
+                    </label>
                 </div>
-
-                <div id="investments" class="tab-content active">
-                    <h2>Manage Investments</h2>
-                    <div class="toolbar">
-                        <button class="add-new-btn" data-model="solar_panel">
-                            <i data-feather="sun" class="btn-icon"></i> Add Solar Panel
-                        </button>
-                        <button class="add-new-btn" data-model="battery">
-                            <i data-feather="battery-charging" class="btn-icon"></i> Add Battery
-                        </button>
-                    </div>
-                    <div id="solar_panels-table-container"></div>
-                    <div id="batteries-table-container"></div>
-
-                    <h2 class="mt-4">Manage Cars</h2>
-                    <div class="toolbar">
-                        <button class="add-new-btn" data-model="car">
-                            <i data-feather="truck" class="btn-icon"></i> Add Car
-                        </button>
-                    </div>
-                    <div id="cars-table-container"></div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Opslaan</button>
+                    <span id="solar-panel-feedback" class="feedback-message"></span>
                 </div>
+            </form>
+        </section>
 
-                <div id="tariffs" class="tab-content">
-                    <h2>Manage Tariffs</h2>
-                    <button class="add-new-btn" data-model="tariff">Add New Tariff</button>
-                    <div id="tariffs-table-container"></div>
+        <section class="card">
+            <h2>Batterij Installatie</h2>
+            <p>Beheer de gegevens van de thuisbatterij.</p>
+            <form id="battery-form" class="simple-form">
+                <div class="form-grid">
+                    <label>
+                        Naam
+                        <input type="text" name="name" required placeholder="Bijv. Thuisbatterij">
+                    </label>
+                    <label>
+                        Aankoopdatum
+                        <input type="date" name="purchase_date" required>
+                    </label>
+                    <label>
+                        Aankoopkosten (€)
+                        <input type="number" name="purchase_cost_eur" step="0.01" required>
+                    </label>
+                    <label>
+                        Capaciteit (kWh)
+                        <input type="number" name="capacity_kwh" step="0.01" required>
+                    </label>
                 </div>
-
-                <div id="metrics" class="tab-content">
-                    <h2>Manage Monthly Metrics</h2>
-                    <div class="toolbar">
-                        <label for="metric-year-selector">Select Year:</label>
-                        <select id="metric-year-selector"></select>
-                    </div>
-                    <div id="metrics-table-container"></div>
-
-                    <div class="card" id="journal-entry-card">
-                        <h2><i data-feather="edit"></i> Maandjournaal Invoeren</h2>
-                        <form id="journal-form">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="journal-year">Jaar</label>
-                                    <input type="number" id="journal-year" name="year" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="journal-month">Maand</label>
-                                    <select id="journal-month" name="month" required>
-                                        <option value="1">Januari</option>
-                                        <option value="2">Februari</option>
-                                        <option value="3">Maart</option>
-                                        <option value="4">April</option>
-                                        <option value="5">Mei</option>
-                                        <option value="6">Juni</option>
-                                        <option value="7">Juli</option>
-                                        <option value="8">Augustus</option>
-                                        <option value="9">September</option>
-                                        <option value="10">Oktober</option>
-                                        <option value="11">November</option>
-                                        <option value="12">December</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <fieldset>
-                                <legend>Netverbruik (kWh)</legend>
-                                <div class="form-grid">
-                                    <div class="form-group"><label for="grid_consumption_low_kwh">Verbruik Dal</label><input type="number" step="0.01" name="grid_consumption_low_kwh"></div>
-                                    <div class="form-group"><label for="grid_consumption_high_kwh">Verbruik Piek</label><input type="number" step="0.01" name="grid_consumption_high_kwh"></div>
-                                    <div class="form-group"><label for="grid_feed_in_low_kwh">Teruglevering Dal</label><input type="number" step="0.01" name="grid_feed_in_low_kwh"></div>
-                                    <div class="form-group"><label for="grid_feed_in_high_kwh">Teruglevering Piek</label><input type="number" step="0.01" name="grid_feed_in_high_kwh"></div>
-                                </div>
-                            </fieldset>
-
-                            <fieldset>
-                                <legend>Interne Productie & Opslag (kWh)</legend>
-                                <div class="form-grid">
-                                    <div class="form-group"><label for="solar_production_kwh">Zonproductie</label><input type="number" step="0.01" name="solar_production_kwh"></div>
-                                    <div class="form-group"><label for="battery_charge_kwh">Batterij Laden</label><input type="number" step="0.01" name="battery_charge_kwh"></div>
-                                    <div class="form-group"><label for="battery_discharge_kwh">Batterij Ontladen</label><input type="number" step="0.01" name="battery_discharge_kwh"></div>
-                                </div>
-                            </fieldset>
-
-                            <fieldset>
-                                <legend>Financieel</legend>
-                                <div class="form-grid">
-                                    <div class="form-group"><label for="monthly_prepayment_eur">Voorschot (€)</label><input type="number" step="0.01" name="monthly_prepayment_eur"></div>
-                                </div>
-                            </fieldset>
-
-                            <fieldset>
-                                <legend>Autogebruik (kWh)</legend>
-                                <div id="car-charging-entries" class="form-grid">
-                                    <!-- Dynamisch geladen -->
-                                    <p>Auto's laden... (of geen auto's geconfigureerd in admin)</p>
-                                </div>
-                            </fieldset>
-
-                            <div class="form-actions">
-                                <button type="submit" class="btn-primary">Journaal Opslaan</button>
-                                <button type="button" id="cancel-edit-btn" class="btn-secondary hidden">Annuleren</button>
-                            </div>
-                            <p id="form-feedback" class="feedback-message"></p>
-                        </form>
-                    </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Opslaan</button>
+                    <span id="battery-feedback" class="feedback-message"></span>
                 </div>
+            </form>
+        </section>
 
-                <div id="debug" class="tab-content">
-                    <h2>Debug Tools</h2>
-                    <div class="toolbar">
-                        <button id="clear-database-btn" class="btn-danger">Clear Database</button>
-                        <button id="fill-database-btn" class="btn-primary">Fill Database with Mockup Data</button>
-                    </div>
+        <section class="card">
+            <h2>Elektrische Auto's</h2>
+            <p>Voeg auto's toe voor kilometervergoedingen en beheer bestaande entries.</p>
+            <form id="car-form" class="simple-form">
+                <div class="form-grid">
+                    <label>
+                        Naam of kenteken
+                        <input type="text" name="name" required placeholder="Bijv. Tesla Model 3">
+                    </label>
+                    <label>
+                        Vergoeding (€/kWh)
+                        <input type="number" name="reimbursement_rate_eur_per_kwh" step="0.0001" required placeholder="0.21">
+                    </label>
                 </div>
-            </main>
-
-            <!-- Modal for Add/Edit Forms -->
-            <div id="form-modal" class="modal">
-                <div class="modal-content">
-                    <span class="close-btn">&times;</span>
-                    <h3 id="modal-title"></h3>
-                    <form id="modal-form"></form>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Auto toevoegen</button>
+                    <span id="car-feedback" class="feedback-message"></span>
                 </div>
-            </div>
+            </form>
 
-            <footer>
-                <p>JouleJournal Admin Panel</p>
-            </footer>
-        </div>
-    </div>
+            <table class="data-table" id="car-table">
+                <thead>
+                    <tr>
+                        <th>Naam</th>
+                        <th>Vergoeding (€/kWh)</th>
+                        <th>Acties</th>
+                    </tr>
+                </thead>
+                <tbody id="car-table-body">
+                    <tr>
+                        <td colspan="3">Geen auto's geladen.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
 
+    <footer class="page-footer">
+        <p>JouleJournal Beheerportaal</p>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
     <script src="/static/js/admin.js"></script>
     <script src="/static/js/theme.js"></script>
 </body>

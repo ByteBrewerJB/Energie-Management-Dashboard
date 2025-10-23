@@ -1,26 +1,34 @@
-from pydantic import BaseModel, ConfigDict
+"""Pydantic schemas for car resources."""
+
 from decimal import Decimal
 from typing import Optional
 
-# Shared properties
+from pydantic import BaseModel, ConfigDict
+
+
 class CarBase(BaseModel):
+    """Shared properties for car resources."""
+
     name: Optional[str] = None
     reimbursement_rate_eur_per_kwh: Optional[Decimal] = None
 
 
-# Properties to receive on item creation
 class CarCreate(CarBase):
+    """Properties required to create a car."""
+
     name: str
     reimbursement_rate_eur_per_kwh: Decimal
 
 
-# Properties to receive on item update
 class CarUpdate(CarBase):
+    """Properties that can be updated for a car."""
+
     pass
 
 
-# Properties shared by models stored in DB
 class CarInDBBase(CarBase):
+    """Base properties stored in the database."""
+
     id: int
     name: str
     reimbursement_rate_eur_per_kwh: Decimal
@@ -28,6 +36,7 @@ class CarInDBBase(CarBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Properties to return to client
 class Car(CarInDBBase):
+    """Properties returned to the API client."""
+
     pass
